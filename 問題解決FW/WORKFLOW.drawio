@@ -1,0 +1,35 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="workflow" name="全体フロー">
+    <mxGraphModel dx="800" dy="900" grid="1" gridSize="10" guides="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="826" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="A" value="困りごと・相談" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="280" y="40" width="200" height="40" as="geometry" /></mxCell>
+        <mxCell id="B" value="① ヒアリング&#10;問題を整理する" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="280" y="120" width="200" height="50" as="geometry" /></mxCell>
+        <mxCell id="C" value="01_問題定義.md" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="300" y="210" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D" value="② 原因ツリー Why&#10;なぜ起きているか" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="280" y="290" width="200" height="50" as="geometry" /></mxCell>
+        <mxCell id="E" value="ツリーに納得?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="300" y="380" width="160" height="70" as="geometry" /></mxCell>
+        <mxCell id="F" value="02_原因ツリー_why.md&#10;（＋.drawio）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="300" y="490" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="G" value="③ 対応策ツリー How&#10;どう解決するか" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="280" y="570" width="200" height="50" as="geometry" /></mxCell>
+        <mxCell id="H" value="ツリーに納得?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="300" y="660" width="160" height="70" as="geometry" /></mxCell>
+        <mxCell id="I" value="03_対応策ツリー_how.md&#10;（＋.drawio）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="300" y="770" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="J" value="④ 優先順位づけ&#10;アクションプラン" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="280" y="850" width="200" height="50" as="geometry" /></mxCell>
+        <mxCell id="K" value="04_アクションプラン.md&#10;（＋優先順位マトリクス.drawio）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="290" y="940" width="180" height="40" as="geometry" /></mxCell>
+        <mxCell id="L" value="実行へ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#333333" vertex="1" parent="1"><mxGeometry x="300" y="1020" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="eAB" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="A" target="B"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="B" target="C"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eCD" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="C" target="D"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eDE" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="D" target="E"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eED" value="コメントして改善" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;exitX=0;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="E" target="D"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eEF" value="根本原因を洗い出す" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="E" target="F"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eFG" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="F" target="G"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eGH" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="G" target="H"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eHG" value="コメントして改善" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;exitX=0;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="H" target="G"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eHI" value="対応策を確定" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="H" target="I"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eIJ" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="I" target="J"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eJK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="J" target="K"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eKL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="K" target="L"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

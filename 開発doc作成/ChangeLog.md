@@ -1,0 +1,122 @@
+# Changelog
+
+このプロジェクトの注目すべき変更はすべてこのファイルに記載されます。
+
+フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に基づいており、
+このプロジェクトは [Semantic Versioning](https://semver.org/lang/ja/) に準拠しています。
+
+変更カテゴリ
+
+Added — 新機能
+Changed — 既存機能の変更
+Deprecated — 非推奨になった機能
+Removed — 削除された機能
+Fixed — バグ修正
+Security — セキュリティ関連の修正
+
+
+## [0.6.0] - 2026-06-23
+
+### Added
+- **ADR(アーキテクチャ決定記録)** を新設(原典外・ハーネス拡張)。1決定1ファイルを `output/横断/ADR/` に蓄積し、MADR / Nygard 形式(ステータス / コンテキスト / 決定 / 検討した選択肢 / 影響)で記録。索引は `output/横断/ADR/_index.md`。テンプレ `harness/templates/ADR-NNNN_アーキテクチャ決定記録.md`(frontmatter は `adr_id`、`check.py` の標準検証対象外)
+- **DDD ドメインモデル DM-1** を新設(原典外・ハーネス拡張)。集約・エンティティ・値オブジェクト・ドメインサービス・ドメインイベント・リポジトリ・ユビキタス言語・境界づけられたコンテキスト・不変条件を表現。テンプレ `harness/templates/DM-1_ドメインモデル.md`(標準セクション 1〜7 準拠)。R-4 概念データモデルを上流、B-12 / D-2 を下流とする結節点
+- インスタンスID `AG-`(集約)・`VO-`(値オブジェクト)を ID 体系に追加(`check.py` の `INSTANCE_PREFIXES` に登録)。DDD のエンティティは原典の `E-` を流用
+- 文書ID `DM-`(ドメインモデル)・`ADR-`(アーキテクチャ決定記録)を文書IDレイヤーに追加(インスタンスID採番と独立)
+- `harness/templates/_format.md` に **「1文1行」改行規約**(地の文は句点ごとに改行 / 表・コード・引用ブロックは対象外)を追加
+- `harness/01_selection_rules.md` に §8「ドメインモデル・ADR(原典外)」と状態値 `蓄積中`(ADR)を追加
+- `harness/03_quality_checklist.md` に図形式(1-8)・1文1行(1-9)・DM-1 整合(2-4)・DM-1 / ADR レビュー観点を追加
+- `harness/00_intake.md` / `output/project_profile.md` に「DDD 採用」項目を追加(DM-1 の発火スイッチ)
+- `doc_harness.code-workspace` に VS Code 拡張「Draw.io Integration」(`hediet.vscode-drawio`)の推奨を追加
+
+### Changed
+- **図の方針を「Mermaid 推奨」→「`.drawio.svg` 正本」に変更**。レンダラー非対応の環境で Mermaid が表示されない問題を解消(SVG として全環境で表示でき、Draw.io 拡張で再編集可。Mermaid は補助として併記可)。対象は案件成果物の図で、ハーネス取説図(`WORKFLOW.md`)の Mermaid は対象外
+- `harness/tools/check.py`: `INSTANCE_PREFIXES` に `AG` / `VO` を追加、`EXCLUDE_DIRS = {"ADR"}` で `output/横断/ADR/` 配下を標準検証(構造・状態突合)から除外
+- `harness/02_workflow.md` に DM-1(R-4 の後)と ADR(随時の軽量フロー)を組み込み、完了判定に DM-1 / ADR を追加
+- `CLAUDE.md` のID体系表・文書IDレイヤー解説・主要ファイル表・ルール5(テンプレ準拠と記述スタイル)・3ツールフロー表を更新
+- `WORKFLOW.md` のフロー図・依存図・ディレクトリ図・引き渡し refs に DM-1 / ADR を反映
+- 既存の原典外テンプレ(PR-1 / D-15 / TS-1)の地の文を1文1行規約に整形
+- 全ファイルのバージョン表記を v0.6 に統一(`README.md` が v0.4 のままだったズレも是正)
+- **後方互換**: `AG-` / `VO-` 追加と ADR 除外は既存案件のID・既存ドキュメントの挙動を変えない(regex 拡張は既存マッチを保存。fixtures `sample_ok` 0件 / `sample_ng` 6件 は回帰なし)。DM-1 / ADR / DDD はオプションで、DDD 非採用・ADR 不使用の案件は従来どおり
+- ハーネスバージョン v0.5 → v0.6
+
+
+## [0.5.0] - 2026-06-01
+
+### Added
+- **Phase 0「事前検討の取り込み」(任意)** を新設。要件定義の前段で「問題・原因・対応策」を検討した資料がある場合に発動する、3ツール協調フローの最上流オプションフェーズ
+- 事前検討資料の投入先 `input/事前検討資料/`(ユーザーが資料を配置 / 形式自由)と説明 `README.md`
+- PR-1 事前検討サマリ(原典外・ハーネス拡張)テンプレ `harness/templates/PR-1_事前検討サマリ.md`(「問題 → 原因 → 対応策 → 想定要件・制約・前提」に正規化、要件への追跡性を確保)。生成先は `output/00_事前検討/`
+- 文書ID `PR-`(Pre-study)を文書IDレイヤーに追加(`TS-` 同様にインスタンスID採番と独立)
+- `harness/01_selection_rules.md` に担当 `CC0`(Phase 0)と PR-1 の条件付き作成ルールを追加
+- `harness/03_quality_checklist.md` に「Phase 0 → インテーク」移行チェックを追加
+
+### Changed
+- `harness/00_intake.md` に「0. 事前検討資料の確認」を質問1の前段として追加(資料があれば PR-1 を生成し、以降の質問を確認形式に切り替えてユーザー負担を軽減 / 無ければスキップ)
+- `harness/02_workflow.md` に §0.5「事前検討の取り込み」手順、`CLAUDE.md` 起動時の挙動・3ツールフロー表、`WORKFLOW.md` の全体図(Phase 0 ノード)・役割表・ディレクトリ図を更新
+- `harness/templates/_format.md` の phase 列挙に「事前検討」を追加、「T 系列テンプレ生成の例外規定」を「原典外ドキュメントの例外規定」に一般化し PR-1 を追記
+- `output/project_profile.md` に「0. 事前検討資料」セクションを追加
+- ハーネスバージョン v0.4 → v0.5
+- **後方互換**: 事前検討資料が無い案件は Phase 0 をスキップし、従来どおりインテークから開始(既存の運用に影響なし)
+
+
+## [0.4.0] - 2026-05-29
+
+### Added
+- 整合性検証スクリプト `harness/tools/check.py`(Python標準のみ・read-only)。構造チェック / ID整合 / 状態突合を機械検証
+- `harness/tools/fixtures/`(正常系・異常系サンプル)と `harness/tools/README.md`
+- `_id_registry.md` のフォーマットを CLAUDE.md「3. ID体系の一貫性」で正本定義(機械可読な表形式)
+
+### Changed
+- `CLAUDE.md` ルール6 / `harness/02_workflow.md` Step F・完了判定 / `harness/03_quality_checklist.md` を「機械チェック(自動)+ 観点チェック(手動)」の2層運用に再編
+- ハーネスバージョン v0.3 → v0.4
+
+
+## [0.3.0] - 2026-05-29
+
+### Added
+- Phase 3.5(テスト具体化 + 2段階レビューゲート)を新設。テスト戦略 = TDD の案件で発動するオプション運用
+- TS-1 受け入れテスト仕様書テンプレ(原典外・ハーネス拡張)、D-15 単体テスト仕様書テンプレ
+- `harness/templates/_test_code_convention.md`(テストコード生成規約・言語非依存)
+- `output/_handoff_to_implementation/`(Phase 3.5 → Phase 4 引き渡しパッケージ、Red テスト)
+- インテーク質問票に「テスト戦略(TDD / 通常 / 未定)」「テストフレームワーク」を追加(Phase 3.5 の発火スイッチ)
+- ID体系にテストケースID(UT- 単体 / AT- 受け入れ)を追加
+- `WORKFLOW.md` に §7.5「Phase 3.5 仕様」とテスト依存図を追加
+
+### Changed
+- D-15 単体テスト仕様書を「Phase 3 で骨子 → Phase 3.5 で最終化」に(TDD採用時)
+- `harness/01_selection_rules.md` に担当 `CC1-P35` と状態値(ゲート1承認 / Red作成済 / ゲート2承認)を追加
+- `harness/03_quality_checklist.md` に Phase 3.5 ゲート1 / ゲート2 のチェックを追加
+- ハーネス本体の改修記録先を `ChangeLog.md`、案件中の微修正を `output/_review_log.md` と整理(CLAUDE.md)
+- バージョン表記を全ファイルで統一(従来 CLAUDE/README=v0.2、profile=v0.1、ChangeLog=0.0.2 が混在 → 本版より SemVer `0.3.0` / ドキュメント表記 `v0.3` に一本化)
+- 運用前提モデルIDを `claude-opus-4-7` → `claude-opus-4-8` に更新
+- ハーネスバージョン v0.2 → v0.3
+
+
+## [0.0.2] - 2026-04-30
+
+### Added
+- Claude Designによる画面設計
+- 3ツール協調フロー(ClaudeCode → ClaudeDesign → ClaudeCode → 実装)に対応
+- `WORKFLOW.md` を新設(Mermaid によるグラフィカルな全体図)
+- `output/_handoff_to_claude_design/`(Phase 1 → Phase 2 引き渡しパッケージ用)
+- `output/04_画面設計_from_ClaudeDesign/`(ClaudeDesign 成果物受け入れ)
+
+### Changed
+- `output/04_詳細設計/` → `output/05_詳細設計/` に繰り下げ(画面設計の場所を空けるため)
+- `harness/01_selection_rules.md` に `担当`(CC1 / CC1-P3 / CD)・`画面影響` 列を追加
+- `harness/02_workflow.md` を 4 フェーズ構成に再編
+- `harness/03_quality_checklist.md` に Phase 1→2 引き渡し / Phase 2→3 取り込みチェックを追加
+- `harness/templates/_index.md` で B-7, B-8 を「ClaudeDesign 委譲」マークに
+- ハーネスバージョン v0.1 → v0.2
+
+
+## [0.0.1] - 2026-04-01
+
+### Added
+- 初回リリース
+
+[Unreleased]: https://github.com/username/project/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/username/project/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/username/project/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/username/project/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/username/project/releases/tag/v1.0.0

@@ -1,0 +1,362 @@
+# ワークフロー(全体図)
+
+このハーネスは **(任意)事前検討 → 要件定義 → 画面設計 → 詳細設計 →(TDD採用時)テスト具体化 → 実装** のフェーズを **3ツール (ClaudeCode / ClaudeDesign / ClaudeCode)** で分担して進めます。**Phase 0(事前検討の取り込み)は `input/事前検討資料/` に資料が投入された案件でのみ発動**し、**Phase 3.5(テスト具体化 + レビューゲート)はプロファイルで「テスト戦略 = TDD」を選んだ案件でのみ発動**します。
+
+このファイルはワークフローの公式図です。具体的な手順は [harness/02_workflow.md](harness/02_workflow.md) を参照してください。
+
+---
+
+## 1. 全体フロー
+
+```mermaid
+flowchart TB
+  classDef cc1 fill:#E0F2FE,stroke:#0369A1,color:#0C4A6E
+  classDef cd  fill:#FCE7F3,stroke:#BE185D,color:#831843
+  classDef cc2 fill:#DCFCE7,stroke:#15803D,color:#14532D
+  classDef io  fill:#FEF9C3,stroke:#A16207,color:#713F12
+  classDef gate fill:#FEE2E2,stroke:#B91C1C,color:#7F1D1D
+
+  Start([案件ワークスペースをコピー]):::io
+
+  subgraph P0["Phase 0 — 事前検討の取り込み(任意 / 資料投入時のみ)"]
+    direction TB
+    P0A[input/事前検討資料/ を読み込み]
+    P0B[PR-1 事前検討サマリ生成<br/>問題→原因→対応策→想定要件]
+    P0A --> P0B
+  end
+  class P0,P0A,P0B cc1
+
+  subgraph P1["Phase 1 — 要件定義 + 基本設計(画面以外)"]
+    direction TB
+    P1A[インテーク<br/>output/project_profile.md]
+    P1B[選定<br/>output/_doc_plan.md]
+    P1C[企画 P-* 該当時]
+    P1D[要件定義 R-*]
+    P1DM[DM-1 ドメインモデル<br/>DDD採用時]
+    P1E[基本設計 B-*<br/>B-7, B-8 を除く]
+    P1A --> P1B --> P1C --> P1D --> P1DM --> P1E
+  end
+  class P1,P1A,P1B,P1C,P1D,P1DM,P1E cc1
+
+  H1[(output/_handoff_to_claude_design/<br/>引き渡しパッケージ)]:::io
+
+  subgraph P2["Phase 2 — 画面設計"]
+    direction TB
+    P2A[B-7 画面一覧・遷移図]
+    P2B[B-8 画面設計書]
+    P2C[画面モック/プロトタイプ]
+    P2A --> P2B --> P2C
+  end
+  class P2,P2A,P2B,P2C cd
+
+  H2[(output/04_画面設計_from_ClaudeDesign/<br/>ClaudeDesign 成果物)]:::io
+
+  subgraph P3["Phase 3 — 詳細設計 + 画面影響B-*の確定"]
+    direction TB
+    P3A[取り込みチェック]
+    P3B[画面影響B-* 更新<br/>B-6, B-11, B-14, B-19]
+    P3C[詳細設計 D-*]
+    P3A --> P3B --> P3C
+  end
+  class P3,P3A,P3B,P3C cc1
+
+  subgraph P35["Phase 3.5 — テスト具体化 + レビューゲート(TDD採用時)"]
+    direction TB
+    P35A[3.5-① テスト仕様確定<br/>D-15 最終化 + TS-1 受け入れ]
+    P35G1{{★ゲート1<br/>仕様レビュー}}
+    P35B[3.5-② Red テストコード生成<br/>UT-* / AT-*]
+    P35G2{{★ゲート2<br/>Red コードレビュー}}
+    P35A --> P35G1 --> P35B --> P35G2
+  end
+  class P35,P35A,P35B cc1
+  class P35G1,P35G2 gate
+
+  H25[(output/_handoff_to_implementation/<br/>Red テスト + 設計引き渡し)]:::io
+
+  subgraph P4["Phase 4 — 実装"]
+    direction TB
+    P4A[テストを Green 化する形で実装]
+  end
+  class P4,P4A cc2
+
+  Start -->|事前検討資料あり| P0
+  P0 --> P1
+  Start -->|資料なし| P1
+  P1 --> H1 --> P2 --> H2 --> P3
+  P3 -->|TDD採用| P35 --> H25 --> P4
+  P3 -->|TDD不採用| P4
+```
+
+凡例: 青=ClaudeCode (ハーネス) / 桃=ClaudeDesign / 緑=ClaudeCode (実装) / 黄=引き渡し成果物 / 赤=レビューゲート
+
+---
+
+## 2. 役割分担
+
+| Phase | 担当ツール | 主成果物 | 場所 |
+|---|---|---|---|
+| 0(任意) | **ClaudeCode (このハーネス)** | PR-1 事前検討サマリ(資料投入時のみ) | このリポジトリ `output/00_事前検討/` |
+| 1 | **ClaudeCode (このハーネス)** | 要件定義 R-* + 基本設計 B-*(画面以外) + DM-1 ドメインモデル(DDD採用時) | このリポジトリ `output/` |
+| 2 | **ClaudeDesign** | 画面設計 B-7, B-8 + 画面モック | ClaudeDesign 上のプロジェクト |
+| 3 | **ClaudeCode (このハーネス)** | 詳細設計 D-* + 画面影響B-*の更新 | このリポジトリ `output/` |
+| 3.5 | **ClaudeCode (このハーネス)** | D-15 最終化 + TS-1 受け入れテスト仕様 + Red テストコード(TDD採用時) | このリポジトリ `output/` |
+| 4 | **ClaudeCode (実装)** | アプリケーションコード(テストを Green 化) | 別の実装リポジトリ |
+
+このハーネスが直接担当するのは **(任意)Phase 0・Phase 1・Phase 3・(TDD採用時)Phase 3.5** です。Phase 2 / 4 への引き渡しと取り込みのみハーネスが管理します。**Phase 0 は `input/事前検討資料/` に資料が投入された案件でのみ、Phase 3.5 は「テスト戦略 = TDD」の案件でのみ発動**します。
+なお、**ADR(アーキテクチャ決定記録)は特定フェーズに属さず**、設計上の意思決定が発生するたびに Phase 1・3 で随時 `output/横断/ADR/` に蓄積します。
+
+---
+
+## 3. ディレクトリと成果物の対応
+
+```
+input/
+└── 事前検討資料/                       ← Phase 0 の入力(ユーザーが資料を投入 / 任意)
+
+output/
+├── project_profile.md                  ← Phase 1 開始時(インテーク)
+├── _doc_plan.md                        ← Phase 1 開始時(選定)
+├── _id_registry.md                     ← 全 Phase で随時
+├── _review_log.md                      ← 全 Phase で随時
+├── 00_事前検討/                        ← Phase 0 (PR-1) / 資料投入時のみ
+├── 01_企画/                            ← Phase 1 (P-*)
+├── 02_要件定義/                        ← Phase 1 (R-*)
+├── 03_基本設計/                        ← Phase 1 + Phase 3 (B-* 画面以外)
+├── _handoff_to_claude_design/          ← Phase 1 → Phase 2 引き渡し
+├── 04_画面設計_from_ClaudeDesign/      ← Phase 2 成果物 (B-7, B-8)
+├── 05_詳細設計/                        ← Phase 3 (D-*) + Phase 3.5 (D-15 最終化, TS-1)
+├── _handoff_to_implementation/         ← Phase 3.5 → Phase 4 引き渡し(Red テスト / TDD採用時)
+└── 横断/                               ← R-13 用語集, R-14 RTM, DM-1 ドメインモデル 等
+    └── ADR/                            ← ADR アーキテクチャ決定記録(随時蓄積)+ _index.md
+```
+
+---
+
+## 4. ドキュメント間依存(画面設計の影響)
+
+画面設計の前に確定できるもの / 後でないと確定できないものを区分します。Phase 1 では「画面非依存」を確定し、「画面依存」は方針レベルで止め、Phase 3 で確定させます。
+
+> テスト系(D-15 単体テスト / TS-1 受け入れテスト)が何を典拠に作られるかの依存は、§7.5「Phase 3.5」のテスト依存図を参照(TDD採用時)。
+
+```mermaid
+flowchart LR
+  classDef independent fill:#DCFCE7,stroke:#15803D,color:#14532D
+  classDef screen      fill:#FCE7F3,stroke:#BE185D,color:#831843
+  classDef dependent   fill:#FEE2E2,stroke:#B91C1C,color:#7F1D1D
+
+  subgraph A["A. 画面非依存(Phase 1で確定)"]
+    direction TB
+    R[R-* 全要件]
+    B1[B-1 システム方式]
+    B2[B-2 アーキテクチャ]
+    B12[B-12 論理ER]
+    DM[DM-1 ドメインモデル<br/>DDD採用時]
+    B17[B-17 運用設計]
+    B19p[B-19 セキュリティ<br/>方針レベル]
+  end
+  class R,B1,B2,B12,DM,B17,B19p independent
+
+  subgraph S["B-7, B-8 画面設計(Phase 2)"]
+    Screen[画面一覧・遷移・各画面]
+  end
+  class Screen,S screen
+
+  subgraph C["C. 画面依存(Phase 3で確定)"]
+    direction TB
+    B6[B-6 機能一覧]
+    B11[B-11 外部IF]
+    B14[B-14 CRUD図]
+    B19c[B-19 セキュリティ<br/>画面別制御]
+    D2[D-2 クラス図]
+    D4[D-4 シーケンス図]
+    D13[D-13 API仕様書]
+    D14[D-14 エラーメッセージ]
+    D15[D-15 単体テスト仕様書]
+  end
+  class B6,B11,B14,B19c,D2,D4,D13,D14,D15 dependent
+
+  R --> Screen
+  B1 --> Screen
+  B12 --> Screen
+  Screen --> B6
+  Screen --> B11
+  Screen --> B14
+  Screen --> B19c
+  Screen --> D2
+  Screen --> D4
+  Screen --> D13
+  Screen --> D14
+  Screen --> D15
+```
+
+---
+
+## 5. フェーズ移行のシーケンス
+
+```mermaid
+sequenceDiagram
+  actor User as ユーザー
+  participant CC1 as ClaudeCode<br/>(ハーネス)
+  participant CD as ClaudeDesign
+  participant CC2 as ClaudeCode<br/>(実装)
+
+  User->>CC1: インテーク開始
+  CC1->>User: 質問票で対話
+  CC1->>CC1: project_profile.md / _doc_plan.md 作成
+
+  Note over CC1: Phase 1: R-* + B-*(画面以外)
+  CC1->>User: Phase 1 完了レビュー依頼
+  User->>CC1: 承認
+  CC1->>CC1: _handoff_to_claude_design/ 生成
+  CC1-->>User: 引き渡しパッケージ準備完了
+
+  User->>CD: パッケージを入力に画面設計を依頼
+  CD-->>User: B-7, B-8, モック作成
+  User->>CC1: 04_画面設計_from_ClaudeDesign/ に配置
+
+  CC1->>CC1: 取り込み整合性チェック
+  Note over CC1: Phase 3: D-* + 画面影響B-*更新
+  CC1->>User: Phase 3 完了レビュー依頼
+  User->>CC1: 承認
+
+  opt テスト戦略 = TDD のとき(Phase 3.5)
+    Note over CC1: Phase 3.5: テスト具体化
+    CC1->>CC1: D-15 最終化 + TS-1 作成(UT-*/AT-*)
+    CC1->>User: ★ゲート1 テスト仕様レビュー依頼
+    User->>CC1: 承認
+    CC1->>CC1: Red テストコード生成(失敗状態を確認)
+    CC1->>User: ★ゲート2 Red コードレビュー依頼
+    User->>CC1: 承認
+    CC1->>CC1: _handoff_to_implementation/ 生成
+  end
+
+  User->>CC2: 全ドキュメント + Red テストを入力に実装依頼
+  CC2-->>User: アプリケーションコード(テストを Green 化)
+```
+
+---
+
+## 6. 引き渡しパッケージ仕様 (Phase 1 → 2)
+
+`output/_handoff_to_claude_design/` に以下を生成。ユーザーはこのフォルダを ClaudeDesign に渡せば画面設計に必要な情報が揃います。
+
+```
+_handoff_to_claude_design/
+├── README.md                       # ClaudeDesign 向け説明書(画面設計の前提条件)
+├── 00_案件サマリ.md                # project_profile からの抜粋 + 制約
+├── 01_要件サマリ.md                # R-1 / R-7 or R-8 / R-9 のダイジェスト
+├── 02_入力資料一覧.md              # refs/ のインデックス + 各資料の使い方
+└── refs/                           # 該当ドキュメントのコピー
+    ├── R-1_業務要件定義書.md
+    ├── R-7_ユーザーストーリー.md  または  R-8_機能要件定義書.md
+    ├── R-9_非機能要件定義書.md
+    ├── R-13_用語集.md
+    ├── B-1_システム方式設計書.md
+    ├── B-2_アーキテクチャ設計書.md
+    ├── B-12_論理ER図.md
+    └── DM-1_ドメインモデル.md   # DDD採用時
+```
+
+`refs/` の中身は **コピー** とする(ClaudeDesign 側では追加情報を取りに来られないため)。Phase 1 完了時にスナップショットとして固定する。
+
+---
+
+## 7. 取り込み仕様 (Phase 2 → 3)
+
+ClaudeDesign 成果物は `output/04_画面設計_from_ClaudeDesign/` に以下の構成で配置:
+
+```
+04_画面設計_from_ClaudeDesign/
+├── README.md                  # 取り込み手順 + チェックリスト
+├── B-7_画面一覧_画面遷移図.md
+├── B-8_画面設計書.md
+├── mockups/                   # 画面モック画像 / Figma リンク等
+└── _import_log.md             # 取り込み日 + ClaudeDesign プロジェクトURL
+```
+
+取り込み時に Phase 3 で実施するチェック(詳細は [harness/03_quality_checklist.md](harness/03_quality_checklist.md)):
+
+- [ ] 画面ID(S-XXX)が `output/_id_registry.md` と整合
+- [ ] 各画面で参照されるエンティティが B-12 論理ER の名称と一致
+- [ ] 画面ごとのアクセス権限が R-9 / B-19 方針と整合
+- [ ] 用語が R-13 用語集に登録されている(未登録は登録)
+- [ ] 画面起点で呼ばれる機能が B-6 機能一覧 に存在する(なければ追記)
+
+---
+
+## 7.5 Phase 3.5 — テスト具体化 + レビューゲート(TDD採用時)
+
+`output/project_profile.md` の「テスト戦略」が **TDD** の案件でのみ実施。Phase 3(詳細設計)完了後、Phase 4(実装)に入る前に、設計ドキュメントから **テストを先に作り上げ**、2段階のレビューゲートでユーザー承認を得る。
+
+### 入口ガード(満たさなければ着手しない)
+
+- [ ] `project_profile.md` の「テスト戦略 = TDD」
+- [ ] 技術スタック + テストフレームワークが確定(TBD 不可)← ルール7「推測で埋めない」
+- [ ] D-15 の骨子(対象モジュール × 観点)が Phase 3 で作成済
+- [ ] 対象機能(B-6)/ ユーザーストーリー(R-7)の受け入れ基準(AC)が確定
+
+### ステップとゲート
+
+```
+3.5-① テスト仕様の確定
+  - D-15 単体テスト仕様書を最終化(全モジュール × 観点 × ケース、UT-* 採番)
+  - TS-1 受け入れテスト仕様書を作成(AC → Given-When-Then、AT-* 採番)
+  - R-14 RTM のテストID列(UT-*/AT-*)を充填(RTM 省略時は D-15/TS-1 の
+    トレーサビリティ欄で代替)
+  ★ゲート1(仕様レビュー)→ ユーザー承認
+        ↓
+3.5-② Red テストコード生成
+  - UT-*/AT-* に1対1対応する実行可能テストを生成(技術スタック/FW準拠)
+  - 全テストが Red(失敗)で動くことを確認
+  - output/_handoff_to_implementation/tests/{unit,acceptance}/ に配置
+  ★ゲート2(Red コードレビュー)→ ユーザー承認
+        ↓
+  → Phase 4(別リポジトリ)で Green 化
+```
+
+### テスト依存(何を典拠にテストを作るか)
+
+```mermaid
+flowchart LR
+  classDef req  fill:#FEF9C3,stroke:#A16207,color:#713F12
+  classDef des  fill:#E0F2FE,stroke:#0369A1,color:#0C4A6E
+  classDef tst  fill:#FCE7F3,stroke:#BE185D,color:#831843
+
+  AC[受け入れ基準 AC<br/>R-7 / R-8]:::req
+  B8[B-8 画面設計書]:::des
+  D12[D-12 モジュール仕様]:::des
+  TS1[TS-1 受け入れテスト仕様<br/>AT-*]:::tst
+  D15[D-15 単体テスト仕様<br/>UT-*]:::tst
+  Code[Red テストコード]:::tst
+
+  AC --> TS1
+  B8 --> TS1
+  B8 --> D15
+  D12 --> D15
+  TS1 --> Code
+  D15 --> Code
+```
+
+### ゲート完了基準
+
+| ゲート | 完了基準 |
+|---|---|
+| ゲート1(仕様) | 全機能(B-6)・全 AC に1件以上のケースが割当 / 期待結果が検証可能(数値・状態が具体)/ RTM テストID列充填 / `_review_log.md` 記録 / ユーザー承認 |
+| ゲート2(Red) | ゲート1の全ケースに対応コードが存在 / 全テストが Red で実行確認済(実行ログを `_review_log.md` に添付)/ テスト名と UT-*/AT-* が機械的に対応 / 技術スタック準拠 / ユーザー承認 |
+
+アジャイル運用では Just Enough により、ゲート1とゲート2を1回のレビューに統合してよい。
+
+---
+
+## 8. Phase 4 実装への引き渡し
+
+Phase 3 完了時点(TDD採用時は Phase 3.5 のゲート2承認後)で、実装 (ClaudeCode) に渡す入力は以下:
+
+- `output/02_要件定義/` 全ドキュメント
+- `output/03_基本設計/` 全ドキュメント
+- `output/04_画面設計_from_ClaudeDesign/` 全ドキュメント
+- `output/05_詳細設計/` 全ドキュメント(D-15 単体テスト仕様 / TS-1 受け入れテスト仕様 を含む)
+- `output/横断/` 全ドキュメント(R-13 用語集, R-14 RTM, DM-1 ドメインモデル, ADR アーキテクチャ決定記録)
+- **(TDD採用時)** `output/_handoff_to_implementation/` — Red テストコード(`tests/unit/`, `tests/acceptance/`)+ `_test_manifest.md`(UT/AT ↔ ファイル ↔ 要件 の対応表)+ README(Green 化手順)
+
+別リポジトリの ClaudeCode は、これらを `docs/design/` 等にコピー or サブモジュール参照して実装に着手します。**TDD採用時は、`_handoff_to_implementation/tests/` の Red テストをプロジェクトに取り込み、テストを Green にする形で実装を進めます**(テストを後から都合よく書き換えない)。
