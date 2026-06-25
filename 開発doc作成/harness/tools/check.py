@@ -14,6 +14,8 @@
   6. ファイル名整合(v0.9) — ファイル名先頭の doc_id と frontmatter doc_id の一致
   7. 依存検証(v0.9)       — frontmatter depends_on が _doc_plan に存在し、本書が進行中以上なら依存先も承認済か
   8. ADR 突合(v0.9)       — output/横断/ADR/ がある案件で、ADR ファイル群と _index.md の対応・status 記入
+  9. 用語整合(v0.10)      — R-13 用語集の「使用禁止語」が他ドキュメント本文に出現していないか
+ 10. 循環検出(v0.10)      — 全ドキュメントの depends_on を DAG として集約し循環参照を検出
 
 オプション:
   --tbd               TBD を _tbd_dashboard.md に集約出力(これだけが書き込みを行う)
@@ -407,6 +409,145 @@ def check_tdd_coverage(output_dir, registry_ids):
 
 
 # ===================================================================
+# 用語整合(v0.10)
+# ===================================================================
+
+def check_glossary(output_dir, docs):
+    """R-13 用語集の「使用禁止語」が他ドキュメント本文に出現していないか確認(v0.10〜)。
+
+    R-13 の表から「用語」と「使用禁止語」の対応を抽出し、
+    使用禁止語を含むドキュメント(R-13 自身を除く)を警告する。
+    1ファイル × 1禁止語につき最大1件の指摘(過剰な警告を避ける)。
+
+    R-13 が存在しない案件 / 表の列構造が想定外の案件 / 禁止語列が空の案件はスキップ。
+    プレースホルダ行(`{{` を含む)も除外。
+    """
+    issues = []
+    r13_path = find_doc(output_dir, "R-13")
+    if r13_path is None:
+        return issues
+    rows = parse_markdown_table(r13_path)
+    if len(rows) <= 1:
+        return issues
+    header = rows[0]
+
+    def col_idx(*needles):
+        for i, h in enumerate(header):
+            if any(n in h for n in needles):
+                return i
+        return None
+
+    term_col = col_idx("用語")
+    forbidden_col = col_idx("使用禁止")
+    if term_col is None or forbidden_col is None:
+        return issues  # 表構造が想定と違う(v0.10 列規約: 用語 / 使用禁止語 / ...)
+
+    forbidden_map = {}  # forbidden_word -> canonical_term
+    for cells in rows[1:]:
+        if len(cells) <= max(term_col, forbidden_col):
+            continue
+        term = cells[term_col].strip()
+        forbidden_raw = cells[forbidden_col].strip()
+        if "{{" in term or "{{" in forbidden_raw:
+            continue  # テンプレのプレースホルダ
+        if not term or not forbidden_raw or forbidden_raw in ("—", "-", "", "なし"):
+            continue
+        # "注文(本書では受注に統一)" や "注文(本書では受注に統一)" から主語のみ抽出
+        main = re.split(r"[（(]", forbidden_raw, 1)[0].strip()
+        if main:
+            forbidden_map[main] = term
+
+    if not forbidden_map:
+        return issues
+
+    for path in docs:
+        if path == r13_path:
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                lines = f.read().splitlines()
+        except OSError:
+            continue
+        for forbidden_word, canonical in forbidden_map.items():
+            for i, line in enumerate(lines, 1):
+                stripped = line.strip()
+                # 見出し・frontmatter区切り・コメント風の行は除外
+                if stripped.startswith("#") or stripped.startswith("---") or stripped.startswith(">"):
+                    continue
+                if forbidden_word in line:
+                    issues.append(Issue("用語整合", path,
+                                        f"L{i}: 使用禁止語 '{forbidden_word}' が出現(R-13 で '{canonical}' に統一)"))
+                    break  # 1ファイル × 1禁止語 で1件のみ
+    return issues
+
+
+# ===================================================================
+# 循環検出(v0.10)
+# ===================================================================
+
+def check_circular_deps(docs):
+    """全ドキュメントの frontmatter depends_on を集約し循環参照を検出(v0.10〜)。
+
+    DFS で WHITE/GRAY/BLACK 三色塗りし、GRAY ノードへの後退辺で循環を検出。
+    検出した循環は正規化(集合化)して重複報告を抑制。
+    検出された循環ごとに、起点ドキュメントのパスに対して 1 件の指摘を出す。
+    """
+    issues = []
+    graph = {}  # doc_id -> [dep_id, ...]
+    doc_id_to_path = {}
+    for path in docs:
+        try:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+        except OSError:
+            continue
+        fm = parse_frontmatter(text)
+        if fm is None or "doc_id" not in fm:
+            continue
+        doc_id = fm["doc_id"].strip()
+        graph[doc_id] = _parse_depends_on(fm)
+        doc_id_to_path[doc_id] = path
+
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = {n: WHITE for n in graph}
+    found_cycles = []
+
+    def dfs(node, stack):
+        color[node] = GRAY
+        stack.append(node)
+        for dep in graph.get(node, []):
+            if dep not in graph:
+                continue  # 外部参照(本書として未登場のID)はスキップ
+            c = color.get(dep, WHITE)
+            if c == GRAY:
+                # 循環: stack 中の dep 出現位置から閉路を切り出す
+                idx = stack.index(dep)
+                found_cycles.append(stack[idx:] + [dep])
+            elif c == WHITE:
+                dfs(dep, stack)
+        stack.pop()
+        color[node] = BLACK
+
+    for n in list(graph.keys()):
+        if color[n] == WHITE:
+            dfs(n, [])
+
+    # 同じ循環(開始点違いの並び替え)を重複排除
+    seen = set()
+    for cyc in found_cycles:
+        key = tuple(sorted(set(cyc)))
+        if key in seen:
+            continue
+        seen.add(key)
+        arrow = " → ".join(cyc)
+        # 起点ドキュメントのパスを指す(無ければ最初のノード)
+        ref_path = doc_id_to_path.get(cyc[0], "(complex)")
+        issues.append(Issue("循環検出", ref_path,
+                            f"depends_on に循環参照: {arrow}"))
+    return issues
+
+
+# ===================================================================
 # TBD 集約(--tbd オプション時のみ)
 # ===================================================================
 
@@ -561,10 +702,13 @@ def main():
         issues += check_filename_vs_doc_id(path, fm)
         issues += check_depends_on(path, fm, plan, plan_exists)
 
-    # 横断: 孤立検出(R-14 RTM があるとき) / AC/AT 網羅(TS-1 があるとき) / ADR 突合
+    # 横断: 孤立検出(R-14 RTM があるとき) / AC/AT 網羅(TS-1 があるとき) / ADR 突合 /
+    #       用語整合(R-13 があるとき)/ 循環検出
     issues += check_orphans(output_dir, registry_ids)
     issues += check_tdd_coverage(output_dir, registry_ids)
     issues += check_adr_index(output_dir)
+    issues += check_glossary(output_dir, docs)
+    issues += check_circular_deps(docs)
 
     # TBD 集約(オプション)
     tbd_path = None

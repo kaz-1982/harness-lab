@@ -15,6 +15,27 @@ Fixed — バグ修正
 Security — セキュリティ関連の修正
 
 
+## [0.10.0] - 2026-06-26
+
+### Added
+- `check.py` に **用語整合検査**(R-13 用語集の「使用禁止語」が他ドキュメント本文に出現していないか確認)を追加(v0.10)。R-13 が存在しない案件、表の列構造が想定外の案件、禁止語列が空の案件はスキップ。1ファイル × 1禁止語 で 1 件のみ報告(過剰警告を抑制)
+- `check.py` に **depends_on 循環検出**(全ドキュメントの frontmatter `depends_on` を DAG として集約し、DFS の三色塗りで循環参照を検出)を追加。同じ循環(開始点違いの並び替え)は重複排除して 1 件に集約して報告
+- **golden sample 案件** `examples/sample_case/` を同梱(v0.10)。小規模アジャイル案件「経理 SaaS — 月次決算 売掛金集計の早期化」の最小完成版(R-1 / R-7 / R-9 / R-13 / B-2 / ADR-0001 + プロファイル / 計画 / 採番台帳 / レビューログ)。`python harness/tools/check.py examples/sample_case` で **緑** になることを確認可能
+- `examples/README.md` を新規作成。golden sample の案件設定・含まれるドキュメント一覧・使い方を記載
+- **ハーネス本体マーカー** `.harness-source` を追加(v0.10)。リポジトリ直下に置かれ「ここはハーネス本体(マスター)」を示す。案件コピー側には存在しない
+- **新規案件コピースクリプト** `harness/tools/new-project.sh` を追加。`.harness-source` を持つディレクトリでのみ動作する安全装置付き。コピー時に `.harness-source` / `examples/` / `_tbd_dashboard.md` などを自動除外、案件コピー側に必要なものだけを残す
+- 新規 fixture `harness/tools/fixtures/sample_v10_glossary/`(用語整合の異常系。1件検出)
+- 新規 fixture `harness/tools/fixtures/sample_v10_cycle/`(3ノード循環 R-1 → R-2 → R-3 → R-1 の異常系。1件検出)
+
+### Changed
+- `CLAUDE.md` の「起動時の挙動」に **ハーネス本体ガード** を追加。`.harness-source` が存在する状態で案件作業を始めようとしたら、`new-project.sh` でコピー作成を案内する流れに(本体でテスト目的等で進めたい場合はユーザーが明示すれば通常フロー)
+- `README.md` の「想定する使い方」に `new-project.sh` を推奨手順として追記、手動コピー時にも `.harness-source` / `examples/` の削除手順を併記
+- `harness/tools/fixtures/sample_v09/02_要件定義/R-2_業務フロー.md` の `depends_on` を `[R-1]` から `[]` に変更(v0.10 で追加された循環検出が自己ループ R-1 → R-1 を捕捉する副作用を回避し、各 fixture が「意図する検査だけを発火させる」設計に整理)
+- `harness/tools/check.py` の冒頭 docstring に検査項目 9 / 10 を追記し、検査総数を 10 カテゴリに更新
+- ハーネスバージョン v0.9 → v0.10
+- **後方互換**: `sample_ok` 0件 / `sample_ng` 6件 / `sample_orphan` 3件 / `sample_v09` 5件 は回帰なし。用語整合は R-13 不在時 / 表の列が想定外時 / 禁止語列空時にスキップし、循環検出は循環が無ければ無音(graph 構築のみ)で動作するため、既存案件への影響なし
+
+
 ## [0.9.0] - 2026-06-26
 
 ### Added

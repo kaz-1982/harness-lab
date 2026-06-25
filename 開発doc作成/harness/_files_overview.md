@@ -40,9 +40,10 @@
 |---|---|---|
 | `harness/tools/check.py` | 整合性検証スクリプト(構造 / ID / 状態 / 孤立 / AC-AT / ファイル名 / 依存 / ADR / TBD 集約) | ハーネス改善時のみ改変 |
 | `harness/tools/README.md` | check.py の使用法 | ハーネス改善時のみ改変 |
-| `harness/tools/fixtures/` | check.py の自己検証 fixture(sample_ok / sample_ng / sample_orphan / sample_v09) | ハーネス改善時のみ改変 |
+| `harness/tools/fixtures/` | check.py の自己検証 fixture(sample_ok / sample_ng / sample_orphan / sample_v09 / sample_v10_glossary / sample_v10_cycle) | ハーネス改善時のみ改変 |
 | `harness/tools/hooks/pre-commit` | Git pre-commit フックサンプル(v0.9〜) | ハーネス改善時のみ改変 |
 | `harness/tools/install-hooks.sh` | `.git/hooks/` に pre-commit を導入(v0.9〜) | ハーネス改善時のみ改変 |
+| `harness/tools/new-project.sh` | 新規案件用にハーネス本体をコピー(v0.10〜) | ハーネス改善時のみ改変 |
 
 ## 案件成果物(`output/`)
 
@@ -74,3 +75,11 @@
 | `README.md` | プロジェクト README(人間向け) | ハーネス改善時のみ改変 |
 | `WORKFLOW.md` | 全体ワークフロー(図と仕様の参照) | ハーネス改善時のみ改変 |
 | `ChangeLog.md` | ハーネス本体の改修履歴 | ハーネス改修時に追記 |
+| `.harness-source` | ハーネス本体(マスター)を示すマーカー(v0.10〜)。案件コピーには存在しない | 編集禁止 |
+
+## 学習用(`examples/`)
+
+| パス | 役割 | 改変可否 |
+|---|---|---|
+| `examples/README.md` | golden sample の説明と使い方(v0.10〜) | ハーネス改善時のみ改変 |
+| `examples/sample_case/` | 小規模アジャイル案件の最小完成版(v0.10〜)。`check.py` で **緑** | ハーネス改善時のみ改変 |

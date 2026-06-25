@@ -30,9 +30,20 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 
 1. **案件ごとにこのディレクトリ全体をコピー** して、案件ワークスペースを作る
 
+   v0.10〜 は専用スクリプトを推奨(`examples/` 等を自動除外):
+
+   ```sh
+   bash harness/tools/new-project.sh ~/projects/案件A
+   cd ~/projects/案件A/
+   ```
+
+   従来通り手動でコピーしても可:
+
    ```sh
    cp -r doc_harness/ projects/案件A/
    cd projects/案件A/
+   rm -f .harness-source        # 案件側ではマーカーを削除
+   rm -rf examples              # 案件には学習用 examples/ は不要
    ```
 
 2. **(任意)事前検討資料があれば `input/事前検討資料/` に投入する**
@@ -132,12 +143,10 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 
 ## ハーネスのバージョン
 
-v0.9 (2026-06 改修6点 ① check.py に depends_on 検証 / ファイル名↔doc_id 整合 / ADR 索引突合 を追加、\
-② Phase 0 トリガを許可拡張子 allowlist 方式に変更し OS / エディタ生成ファイルの誤発火を防止、\
-③ CLAUDE.md スリム化(主要ファイル表を `harness/_files_overview.md` に分離、205→約140行)、\
-④ pre-commit フックサンプル + `install-hooks.sh` 同梱、\
-⑤ fixtures に sample_v09 追加し全 4 fixture 後方互換、\
-⑥ ChangeLog 追記)
+v0.10 (2026-06 改修4点 ① check.py に用語整合(R-13 使用禁止語)と depends_on 循環検出 を追加(計 10 検査カテゴリ)、\
+② `examples/sample_case/` に golden sample(小規模アジャイル案件の最小完成版)を同梱、\
+③ `.harness-source` マーカー + `harness/tools/new-project.sh` で本体 / 案件コピーを物理分離、\
+④ fixtures に sample_v10_glossary / sample_v10_cycle 追加、全 6 fixture 後方互換)
 
 ハーネス自体の改善要望や不備の報告は、案件作業を進める中で気づいた時点でユーザー → Claude へ伝えてください。\
 `harness/` 配下を改修し、ハーネス本体の変更は `ChangeLog.md` に、\

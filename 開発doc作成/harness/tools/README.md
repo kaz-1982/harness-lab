@@ -25,6 +25,8 @@ python3 harness/tools/check.py --help
 | ファイル名整合 | ファイル名先頭の doc_id(`R-1_xxx.md` → "R-1")と frontmatter `doc_id` の一致(v0.9〜)。リネーム事故の検出 |
 | 依存検証 | frontmatter `depends_on` の各IDが `_doc_plan.md` に存在し、本書が「進行中以上」のとき依存先が「承認済」相当(承認済 / 取り込み済 / ゲート2承認 / 蓄積中)になっているか(v0.9〜)。Step B「依存関係確認」の機械化 |
 | ADR 突合 | `output/横断/ADR/` が存在する案件で、ADR ファイル群と `_index.md` の突合(索引漏れ / 索引のゴースト / `status` 未記入を検出 / v0.9〜) |
+| 用語整合 | R-13 用語集の「使用禁止語」列に書かれた語が他ドキュメント本文に出現していないか(v0.10〜)。R-13 が無い案件 / 列構造が想定外 / 禁止語列が空はスキップ。1ファイル × 1禁止語で最大1件 |
+| 循環検出 | 全ドキュメントの `depends_on` を DAG として集約し、DFS の三色塗りで循環参照を検出(v0.10〜)。重複する循環(開始点違いの並び替え)は集約して 1 件で報告 |
 
 > **対象外**: `output/横断/ADR/` 配下(ADR アーキテクチャ決定記録)は MADR 形式で標準構造(セクション 1〜7)を持たないため、構造・状態突合の検証対象外(`EXCLUDE_DIRS` で除外)。`_` 始まりの管理ファイル・README・project_profile も従来どおり対象外。
 >
@@ -49,14 +51,23 @@ python3 harness/tools/check.py --help
 
 ### 自己検証(フィクスチャ)
 ```sh
-python3 harness/tools/check.py harness/tools/fixtures/sample_ok       # → ✅ 緑 / exit 0
-python3 harness/tools/check.py harness/tools/fixtures/sample_ng       # → ❌ 6件検出 / exit 1
-python3 harness/tools/check.py harness/tools/fixtures/sample_orphan   # → ❌ 3件検出(孤立検出×2 + AC/AT網羅×1)/ exit 1
-python3 harness/tools/check.py harness/tools/fixtures/sample_v09      # → ❌ 5件検出(ファイル名×1 + 依存×1 + ADR×3)/ exit 1
+python3 harness/tools/check.py harness/tools/fixtures/sample_ok            # → ✅ 緑 / exit 0
+python3 harness/tools/check.py harness/tools/fixtures/sample_ng            # → ❌ 6件検出 / exit 1
+python3 harness/tools/check.py harness/tools/fixtures/sample_orphan        # → ❌ 3件検出(孤立検出×2 + AC/AT網羅×1)/ exit 1
+python3 harness/tools/check.py harness/tools/fixtures/sample_v09           # → ❌ 5件検出(ファイル名×1 + 依存×1 + ADR×3)/ exit 1
+python3 harness/tools/check.py harness/tools/fixtures/sample_v10_glossary  # → ❌ 1件検出(R-13 使用禁止語の出現)/ exit 1
+python3 harness/tools/check.py harness/tools/fixtures/sample_v10_cycle     # → ❌ 1件検出(3ノードの depends_on 循環)/ exit 1
 ```
-- `sample_ng`: 未登録ID参照 / ID重複 / frontmatter キー欠落 / セクション欠落 / doc_plan 未登録 を意図的に仕込んだ異常系(構造・ID整合・状態突合)
+- `sample_ng`: 未登録ID参照 / ID重複 / frontmatter キー欠落 / セクション欠落 / doc_plan 未登録(構造・ID整合・状態突合)
 - `sample_orphan`: R-14 RTM の表に `R-F-002` / `F-001` を載せず、TS-1 の表に `R-F-002` を載せない異常系(孤立検出 / AC/AT 網羅 / v0.8〜)
-- `sample_v09`: R-2_*.md の frontmatter doc_id を R-1 にずらし、R-7(進行中)が R-13(未着手)に depends_on、ADR-0001 の status 未記入 / ADR-0099 ゴースト / ADR-0003 索引漏れ を仕込んだ異常系(ファイル名整合 / 依存検証 / ADR 突合 / v0.9〜)
+- `sample_v09`: R-2_*.md の frontmatter doc_id を R-1 にずらし、R-7(進行中)が R-13(未着手)に depends_on、ADR-0001 の status 未記入 / ADR-0099 ゴースト / ADR-0003 索引漏れ(ファイル名整合 / 依存検証 / ADR 突合 / v0.9〜)
+- `sample_v10_glossary`: R-13 用語集の「使用禁止語」列に「注文」を登録した上で、R-1 本文に「注文」を含む(用語整合 / v0.10〜)
+- `sample_v10_cycle`: R-1 → R-2 → R-3 → R-1 の循環参照を depends_on で構成(循環検出 / v0.10〜)
+
+加えて **golden sample**(`examples/sample_case/`)で「緑になる完成案件」も確認できる:
+```sh
+python3 harness/tools/check.py examples/sample_case   # → ✅ 緑 / exit 0
+```
 
 ### Git pre-commit フック(v0.9〜)
 

@@ -1,0 +1,13 @@
+# このマーカーは「ここがハーネス本体(マスター)である」ことを示します(v0.10〜)
+#
+# 役割:
+#   - CLAUDE.md 起動時の挙動: このファイルが存在する状態でユーザーが
+#     案件作業(project_profile.md への案件名記入など)を始めようとしたら、
+#     Claude は「ここは本体です。新規案件は `bash harness/tools/new-project.sh <パス>`
+#     でコピーを作ってから着手してください」と警告する
+#   - 案件コピー側にはこのファイルが**存在しない**(new-project.sh が削除する)
+#
+# 編集禁止: このファイルの内容を編集すると判定が乱れます。
+# 例外: ハーネス本体側で `git rm .harness-source` するのは禁止です。
+HARNESS_SOURCE_MARKER=true
+HARNESS_VERSION=v0.10
