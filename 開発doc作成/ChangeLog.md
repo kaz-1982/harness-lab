@@ -15,6 +15,37 @@ Fixed — バグ修正
 Security — セキュリティ関連の修正
 
 
+## [0.11.0] - 2026-06-26
+
+### Added
+- **セッション間引き継ぎの自動化**(v0.11)
+  - `output/_session_log.md`: セッション境界で Claude が追記する引き継ぎログの雛形を新設(出力時系列順、各エントリに「完了 / 進行中 / 次の開始点 / 意思決定メモ / 残 TBD / check.py 結果 / 関連コミット」を構造化)
+  - `check.py --session-start` モード: `_session_log.md` 末尾の前セッションエントリを stdout に表示。セッション開始時に Claude が現在地を把握する補助
+  - `check.py --session-end` モード: 新規エントリのテンプレ(日付・セッション番号・完了/進行中ドキュメント自動算出)を stdout に出力。セッション終了時にコピペして埋めて追記する
+  - CLAUDE.md「起動時の挙動」末尾に「セッション境界の挙動」セクションを追加(開始時に `--session-start` を読む / 終了時に `--session-end` で追記する流れを明文化)
+- **テンプレ DSL 化**(v0.11)
+  - `harness/spec/templates.py`: 13 テンプレのメタ情報(`doc_id` / `phase_key` / `required_when_key` / `depends_on` / `mode_key` / 名称 / `section4_titles`)を一元管理する中央台帳。i18n 対応で複数言語の名称と節タイトルを保持
+  - `harness/spec/i18n_labels.py`: 言語別のラベル辞書(phase / required_when / mode の本文表記、節見出し、scope / 上流 / 下流 / 改訂履歴 / レビュー状態 / 例 のラベル)
+  - `harness/tools/gen-templates.py`: 3 つのモード
+    - `--list [--lang LANG]`: 仕様に登録された全テンプレと言語パックの有無を表示
+    - `--check --lang LANG`: 既存テンプレ(`templates/*.md` / `templates/{lang}/*.md`)の frontmatter を仕様と突合
+    - `--stub DOC_ID --lang LANG`: 指定テンプレの雛形を stdout に出力(他言語版を起こすときに利用)
+- **英語対応の第一歩**(v0.11)
+  - 仕様の `R-1` / `R-9` / `R-13` に `en` 言語パックを追加(名称 + 節タイトル + i18n ラベル)
+  - `harness/templates/en/R-1_business_requirements.md` / `R-9_nonfunctional_requirements.md` / `R-13_glossary.md` を同梱
+  - 残り 10 本も `gen-templates.py --stub <id> --lang en` で雛形作成 → 手動加筆の流れで追加可能
+
+### Changed
+- 既存テンプレ B-1 / B-2 / B-6 の `required_when` を仕様(`spec/templates.py`)の canonical 表記に統一(v0.10 までは個別に微妙な表現があり、DSL の単一情報源原則と不整合だった)
+  - B-1: `WF / ハイブリッド上流で必須 / アジャイル中規模以上で推奨` → `WF / ハイブリッド上流で必須(アジャイル単独運用では R-7 で代替可)`
+  - B-2: `全規模・全手法で必須(アジャイル時は軽量版でOK、最初のスプリント前に作成)` → `全規模・全手法で必須`
+  - B-6: `WF / ハイブリッド上流で必須(アジャイル時は R-7 ストーリーで代替可)` → `WF / ハイブリッド上流で必須(アジャイル単独運用では R-7 で代替可)`
+- `harness/_files_overview.md` / `harness/templates/_index.md` を v0.11 の新ファイル(`spec/` / `tools/gen-templates.py` / `templates/en/`)に対応
+- `.harness-source` のバージョン表記を `v0.10` → `v0.11` に
+- ハーネスバージョン v0.10 → v0.11
+- **後方互換**: 既存テンプレの本文(セクション 1〜7 配下)には触れず、frontmatter の `required_when` のみ canonical 化。`check.py` の 10 検査カテゴリは変更なし。fixtures(sample_ok 0件 / ng 6件 / orphan 3件 / v09 5件 / v10_glossary 1件 / v10_cycle 1件)と golden sample(0 件)は回帰なし
+
+
 ## [0.10.0] - 2026-06-26
 
 ### Added

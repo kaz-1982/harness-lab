@@ -19,13 +19,17 @@
 
 オプション:
   --tbd               TBD を _tbd_dashboard.md に集約出力(これだけが書き込みを行う)
+  --session-start     直近セッションのログ末尾エントリを stdout に表示(セッション再開時に Claude が読む)
+  --session-end       新規セッションエントリのテンプレを stdout に出力(セッション終了時にコピペして使う)
 
 使い方:
   python3 harness/tools/check.py [OUTPUT_DIR]                 # 検証のみ。既定は ./output
   python3 harness/tools/check.py --tbd [OUTPUT_DIR]           # 検証 + TBD ダッシュボード生成
+  python3 harness/tools/check.py --session-start [OUTPUT_DIR] # 末尾セッションログを表示
+  python3 harness/tools/check.py --session-end [OUTPUT_DIR]   # 新規エントリのテンプレを表示
   python3 harness/tools/check.py --help
 
-検証は read-only(--tbd 指定時のみ _tbd_dashboard.md に書き込む)。
+検証は read-only(--tbd 指定時のみ _tbd_dashboard.md に書き込む / --session-* はどちらも stdout のみ)。
 問題があれば終了コード 1、なければ 0(ディレクトリ不在は 2)。
 """
 
@@ -659,6 +663,96 @@ def write_tbd_dashboard(output_dir, entries):
 
 
 # ===================================================================
+# セッションログ補助(v0.11)
+# ===================================================================
+
+def cmd_session_start(output_dir):
+    """直近セッションのログ末尾エントリを stdout に出力。
+
+    output/_session_log.md を読み、最後の `## YYYY-MM-DD Session N ...` 見出し以降を表示する。
+    エントリが無い(初回セッション)場合はその旨を案内する。
+    """
+    log_path = os.path.join(output_dir, "_session_log.md")
+    if not os.path.exists(log_path):
+        print("# セッションログ未作成")
+        print("")
+        print(f"{log_path} がありません。初回セッションのときは作業終了時に")
+        print("`python harness/tools/check.py --session-end` でテンプレを取得して追記してください。")
+        return 0
+    with open(log_path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    # 最後の "## YYYY-MM-DD Session" 見出しを探す
+    last_idx = None
+    for i, line in enumerate(lines):
+        if re.match(r"^## \d{4}-\d{2}-\d{2} Session\b", line.strip()):
+            last_idx = i
+    if last_idx is None:
+        print("# セッションエントリ未記入")
+        print("")
+        print(f"{log_path} にまだセッションエントリがありません(雛形のみ)。")
+        print("初回セッションとして扱ってください。`--session-end` でテンプレ取得。")
+        return 0
+    # 末尾エントリを最後まで(次の "## " かファイル末尾まで)出力
+    end_idx = len(lines)
+    for j in range(last_idx + 1, len(lines)):
+        if lines[j].startswith("## ") and not lines[j].startswith("## " + lines[last_idx][3:13]):
+            end_idx = j
+            break
+    print("# 直近セッションログ(末尾エントリ)")
+    print("")
+    for line in lines[last_idx:end_idx]:
+        print(line)
+    return 0
+
+
+def cmd_session_end(output_dir):
+    """新規セッションエントリのテンプレを stdout に出力。
+
+    自動算出: 日付 / セッション番号 / check.py の現在結果 / _doc_plan から完了済 / 進行中 のリスト。
+    残りはユーザー / Claude が手で埋めてから _session_log.md に追記する。
+    """
+    # 日付(JST)
+    jst = timezone(timedelta(hours=9))
+    today = datetime.now(jst).strftime("%Y-%m-%d")
+
+    # セッション番号: 既存ログから推定
+    log_path = os.path.join(output_dir, "_session_log.md")
+    next_n = 1
+    if os.path.exists(log_path):
+        with open(log_path, encoding="utf-8") as f:
+            for line in f:
+                m = re.match(r"^## \d{4}-\d{2}-\d{2} Session (\d+)\b", line.strip())
+                if m:
+                    next_n = max(next_n, int(m.group(1)) + 1)
+
+    # _doc_plan から「承認済」と「進行中」のリストを抽出
+    plan, plan_exists = load_doc_plan(output_dir)
+    done = []
+    in_progress = []
+    if plan_exists:
+        for did, status in plan.items():
+            if status == "承認済":
+                done.append(did)
+            elif status in ("進行中", "レビュー中", "作成済", "ゲート1承認", "Red作成済"):
+                in_progress.append(did)
+
+    # check.py 結果のサマリ(別プロセスを呼ばずに簡易計算)
+    # ここでは「最終結果の数値」までは出さず、ユーザーに "実行して埋めて" と案内
+    print(f"## {today} Session {next_n} (タイトル: 何を進めたか1行で書く)")
+    print(f"- 完了: " + (", ".join(sorted(done)) if done else "(なし)"))
+    print(f"- 進行中: " + (", ".join(sorted(in_progress)) if in_progress else "(なし — 次セッション着手分)"))
+    print(f"- 次の開始点: (どのドキュメントから着手するか)")
+    print(f"- 意思決定メモ:")
+    print(f"  - (ADR を切るほどではない設計判断・スコープ変更・小さな合意 を記録)")
+    print(f"- 残 TBD: (`python harness/tools/check.py --tbd` で `_tbd_dashboard.md` を更新して内容を確認)")
+    print(f"- check.py: (`python harness/tools/check.py {output_dir}` の最終行をコピー)")
+    print(f"- 関連コミット: (このセッションをまとめる commit のハッシュ)")
+    print("")
+    print("# ↑ 上記をコピーし、必要箇所を埋めて `output/_session_log.md` の末尾に追記してください。")
+    return 0
+
+
+# ===================================================================
 # メイン
 # ===================================================================
 
@@ -668,11 +762,19 @@ def main():
         return 0
 
     do_tbd = "--tbd" in sys.argv
+    do_session_start = "--session-start" in sys.argv
+    do_session_end = "--session-end" in sys.argv
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     output_dir = args[0] if args else "output"
     if not os.path.isdir(output_dir):
         print(f"ERROR: ディレクトリが見つかりません: {output_dir}")
         return 2
+
+    # セッション補助モードは検証を行わず単独で動作
+    if do_session_start:
+        return cmd_session_start(output_dir)
+    if do_session_end:
+        return cmd_session_end(output_dir)
 
     registry_ids, reg_exists = load_registry(output_dir)
     registry_set = set(registry_ids)

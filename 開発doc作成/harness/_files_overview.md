@@ -29,7 +29,10 @@
 | `harness/templates/_format.md` | テンプレ共通フォーマット規約 | ハーネス改善時のみ改変 |
 | `harness/templates/_index.md` | テンプレ一覧と生成方針(✅事前同梱 / ⬜遅延生成) | テンプレ追加時に更新 |
 | `harness/templates/_test_code_convention.md` | テストコード生成規約(言語非依存 / TDD 時) | ハーネス改善時のみ改変 |
-| `harness/templates/{doc_id}_*.md` | 各ドキュメントのテンプレ(原典準拠 + ハーネス拡張) | 必要時に input から生成 |
+| `harness/templates/{doc_id}_*.md` | 各ドキュメントのテンプレ(原典準拠 + ハーネス拡張)/ 日本語版正本 | 必要時に input から生成 |
+| `harness/templates/{lang}/{doc_id}_*.md` | 他言語版テンプレ(v0.11〜)。例: `templates/en/R-1_*.md` | `gen-templates.py --stub` で雛形生成後に手動加筆 |
+| `harness/spec/templates.py` | テンプレ仕様の中央台帳(v0.11〜)。13 本のメタ情報を一元管理 | テンプレ追加・改廃時に改変 |
+| `harness/spec/i18n_labels.py` | 言語別ラベル(v0.11〜)。phase / required_when / mode / 節見出し / ラベル | 言語追加時に拡張 |
 | `harness/templates/PR-1_事前検討サマリ.md` | 事前検討サマリのテンプレ(原典外・ハーネス拡張) | ハーネス改善時のみ改変 |
 | `harness/templates/DM-1_ドメインモデル.md` | ドメインモデルのテンプレ(原典外・ハーネス拡張 / DDD) | ハーネス改善時のみ改変 |
 | `harness/templates/ADR-NNNN_アーキテクチャ決定記録.md` | ADR のテンプレ(原典外・ハーネス拡張 / MADR 形式) | ハーネス改善時のみ改変 |
@@ -44,6 +47,7 @@
 | `harness/tools/hooks/pre-commit` | Git pre-commit フックサンプル(v0.9〜) | ハーネス改善時のみ改変 |
 | `harness/tools/install-hooks.sh` | `.git/hooks/` に pre-commit を導入(v0.9〜) | ハーネス改善時のみ改変 |
 | `harness/tools/new-project.sh` | 新規案件用にハーネス本体をコピー(v0.10〜) | ハーネス改善時のみ改変 |
+| `harness/tools/gen-templates.py` | テンプレ DSL ジェネレータ(v0.11〜)。`--list` / `--check` / `--stub` モード | ハーネス改善時のみ改変 |
 
 ## 案件成果物(`output/`)
 
@@ -54,6 +58,7 @@
 | `output/_id_registry.md` | ID採番台帳(`check.py` が parse する正本) | 新ID採番の都度更新 |
 | `output/_review_log.md` | レビュー実施ログ | チェック実施の都度追記 |
 | `output/_tbd_dashboard.md` | TBD ダッシュボード(`check.py --tbd` が自動生成) | 自動生成(手動編集禁止) |
+| `output/_session_log.md` | セッション境界の引き継ぎログ(v0.11〜)。`check.py --session-start/--session-end` で補助 | セッション境界の都度追記 |
 | `output/00_事前検討/` | Phase 0 の成果物(PR-1)/ 資料投入時のみ | Phase 0 で生成 |
 | `output/01_企画/` / `02_要件定義/` / `03_基本設計/` / `05_詳細設計/` | 成果物格納先 | 自由(テンプレ準拠) |
 | `output/横断/` | 横断ドキュメント(R-13 用語集 / R-14 RTM / DM-1 ドメインモデル / R-15 ステークホルダー 等) | 自由(テンプレ準拠) |

@@ -143,10 +143,9 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 
 ## ハーネスのバージョン
 
-v0.10 (2026-06 改修4点 ① check.py に用語整合(R-13 使用禁止語)と depends_on 循環検出 を追加(計 10 検査カテゴリ)、\
-② `examples/sample_case/` に golden sample(小規模アジャイル案件の最小完成版)を同梱、\
-③ `.harness-source` マーカー + `harness/tools/new-project.sh` で本体 / 案件コピーを物理分離、\
-④ fixtures に sample_v10_glossary / sample_v10_cycle 追加、全 6 fixture 後方互換)
+v0.11 (2026-06 改修3点 ① セッション間引き継ぎを自動化(`output/_session_log.md` + `check.py --session-start/--session-end`)、\
+② テンプレ DSL 化(`harness/spec/templates.py` + `gen-templates.py` で仕様検証と他言語版雛形生成)、\
+③ 英語対応の第一歩(R-1 / R-9 / R-13 の英語版を `harness/templates/en/` に同梱、残り 10 本は `--stub --lang en` で雛形生成))
 
 ハーネス自体の改善要望や不備の報告は、案件作業を進める中で気づいた時点でユーザー → Claude へ伝えてください。\
 `harness/` 配下を改修し、ハーネス本体の変更は `ChangeLog.md` に、\
