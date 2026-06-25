@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ----------------------------------------------------------------------
+# ハーネス pre-commit フック(v0.9〜)
+#
+# コミット前に harness/tools/check.py を実行し、整合性エラーがあれば
+# コミットを中断する。緑なら通過。
+#
+# 適用範囲:
+#   - output/ 配下のファイルが staging に含まれているときのみ起動。
+#   - ハーネス本体(harness/, CLAUDE.md 等)の変更時は実行しない
+#     (案件成果物の整合性検査が主目的のため)。
+#
+# バイパス:
+#   $ git commit --no-verify   # 一時的に skip(推奨しない)
+# ----------------------------------------------------------------------
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CHECK_PY="${REPO_ROOT}/harness/tools/check.py"
+OUTPUT_DIR="${REPO_ROOT}/output"
+
+# output/ への変更が staging にあるか
+if ! git diff --cached --name-only | grep -q '^output/'; then
+    # 案件成果物への変更が無いのでスキップ
+    exit 0
+fi
+
+# check.py が存在するか
+if [ ! -f "${CHECK_PY}" ]; then
+    echo "[pre-commit] WARN: ${CHECK_PY} が見つからないため整合性チェックをスキップ" >&2
+    exit 0
+fi
+
+# python が利用可能か
+if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
+    echo "[pre-commit] WARN: python が PATH にないため整合性チェックをスキップ" >&2
+    exit 0
+fi
+
+PY="$(command -v python3 || command -v python)"
+
+echo "[pre-commit] ハーネス整合性チェックを実行..."
+if ! "${PY}" "${CHECK_PY}" "${OUTPUT_DIR}"; then
+    echo "" >&2
+    echo "[pre-commit] ❌ 整合性チェックで問題が検出されました。" >&2
+    echo "[pre-commit]    上記の指摘を解消するか、--no-verify で一時的にバイパスしてください。" >&2
+    exit 1
+fi
+
+echo "[pre-commit] ✅ 整合性チェック OK"
+exit 0

@@ -6,11 +6,14 @@
 期待結果が妥当か等)は検証しない —— それは AI / 人のレビュー範囲。
 
 検証項目:
-  1. 構造チェック     — frontmatter 必須キー + セクション 1〜7 の存在(_format.md 準拠)
-  2. ID整合           — 本文のインスタンスID参照が _id_registry に登録済か / 重複 / プレフィクス規則
-  3. 状態突合         — 各ドキュメントの doc_id が _doc_plan に存在するか
-  4. 孤立検出         — R-14 RTM があるとき、登録 R-B-* / R-F-* / F-* が RTM に出現するか
-  5. AC/AT 網羅(TDD) — TS-1 があるとき、登録 R-F-* が TS-1 に参照されているか
+  1. 構造チェック         — frontmatter 必須キー + セクション 1〜7 の存在(_format.md 準拠)
+  2. ID整合               — 本文のインスタンスID参照が _id_registry に登録済か / 重複 / プレフィクス規則
+  3. 状態突合             — 各ドキュメントの doc_id が _doc_plan に存在するか
+  4. 孤立検出             — R-14 RTM があるとき、登録 R-B-* / R-F-* / F-* が RTM に出現するか
+  5. AC/AT 網羅(TDD)     — TS-1 があるとき、登録 R-F-* が TS-1 に参照されているか
+  6. ファイル名整合(v0.9) — ファイル名先頭の doc_id と frontmatter doc_id の一致
+  7. 依存検証(v0.9)       — frontmatter depends_on が _doc_plan に存在し、本書が進行中以上なら依存先も承認済か
+  8. ADR 突合(v0.9)       — output/横断/ADR/ がある案件で、ADR ファイル群と _index.md の対応・status 記入
 
 オプション:
   --tbd               TBD を _tbd_dashboard.md に集約出力(これだけが書き込みを行う)
@@ -252,6 +255,135 @@ def check_orphans(output_dir, registry_ids):
     return issues
 
 
+def check_filename_vs_doc_id(path, fm):
+    """ファイル名先頭の doc_id と frontmatter doc_id が一致するか確認(v0.9〜)。
+
+    規約: ファイル名は `{doc_id}_{ドキュメント名}.md`(harness/templates/_format.md)。
+    フロントマターを後から書き換えた / ファイルをリネームしたときの不整合事故を検出する。
+    `_` を含まないファイル名(規約外)は検証対象外。
+    """
+    issues = []
+    if fm is None or "doc_id" not in fm:
+        return issues
+    fm_doc_id = fm["doc_id"].strip()
+    base = os.path.basename(path)
+    # 拡張子を除いてアンダースコアで分割
+    name_no_ext = base[:-3] if base.endswith(".md") else base
+    if "_" not in name_no_ext:
+        return issues  # 規約外のファイル名(検証対象外)
+    name_doc_id = name_no_ext.split("_", 1)[0]
+    if name_doc_id != fm_doc_id:
+        issues.append(Issue("ファイル名整合", path,
+                            f"ファイル名先頭の '{name_doc_id}' と frontmatter doc_id '{fm_doc_id}' が不一致"))
+    return issues
+
+
+# 「承認済み相当」とみなす状態(harness/01_selection_rules.md 末尾の状態値表より)
+# 蓄積中(ADR)は常に「使える」状態として扱う。
+APPROVED_STATUSES = {"承認済", "取り込み済", "ゲート2承認", "蓄積中"}
+
+# 本書の状態がこれらのときは、依存先の承認状態を問わない(まだ未着手 / 省略 / 委譲のため)
+SELF_NOT_STARTED_STATUSES = {"未着手", "省略", "委譲", ""}
+
+
+def _parse_depends_on(fm):
+    """frontmatter の depends_on 値('[R-1, R-13]' / '[]' / 'R-1' 等)をID列に正規化。"""
+    if not fm or "depends_on" not in fm:
+        return []
+    raw = fm["depends_on"].strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        raw = raw[1:-1]
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
+
+def check_depends_on(path, fm, plan, plan_exists):
+    """frontmatter depends_on の妥当性を確認(v0.9〜)。
+
+    1. depends_on に列挙されたIDが _doc_plan.md に存在するか(誤記検出)
+    2. 本書の状態が「進行中 / 作成済 / レビュー中 / 承認済」のとき、
+       依存先が「承認済 / 取り込み済 / ゲート2承認 / 蓄積中」のいずれかになっているか
+       (= Step B「依存関係確認」の機械化)
+
+    本書が「未着手 / 省略 / 委譲」のときは依存先の承認状態を問わない。
+    plan が無い案件(初期状態)では本検査をスキップ。
+    """
+    issues = []
+    if not plan_exists or fm is None or "doc_id" not in fm:
+        return issues
+    doc_id = fm["doc_id"].strip()
+    self_status = plan.get(doc_id, "")
+    deps = _parse_depends_on(fm)
+    for dep in deps:
+        if dep not in plan:
+            issues.append(Issue("依存検証", path,
+                                f"depends_on の '{dep}' が _doc_plan に存在しない(誤記の可能性)"))
+            continue
+        if self_status in SELF_NOT_STARTED_STATUSES:
+            continue  # 本書が未着手のときは依存先の承認状態を問わない
+        dep_status = plan[dep]
+        if dep_status not in APPROVED_STATUSES:
+            issues.append(Issue("依存検証", path,
+                                f"depends_on の '{dep}' が未承認(現状: '{dep_status}')。本書は '{self_status}' のため、前提が揃う前に下流に進んでいる可能性"))
+    return issues
+
+
+def check_adr_index(output_dir):
+    """output/横断/ADR/ がある案件で、ADR ファイル群と _index.md の整合を確認(v0.9〜)。
+
+    検出する不整合:
+      - ADR ファイルが存在するのに _index.md が無い
+      - _index.md に載っている ADR-NNNN に対応するファイルが無い(索引のゴースト)
+      - ADR ファイルが _index.md に未掲載(索引漏れ)
+      - ADR ファイルの frontmatter `status` が未記入
+
+    ADR ディレクトリ自体が無い案件(ADR 未使用)では本検査をスキップ。
+    """
+    issues = []
+    adr_dir = os.path.join(output_dir, "横断", "ADR")
+    if not os.path.isdir(adr_dir):
+        return issues
+    index_path = os.path.join(adr_dir, "_index.md")
+    adr_files = sorted(glob.glob(os.path.join(adr_dir, "ADR-*_*.md")))
+    # frontmatter status を取りつつ、ADR-NNNN を抽出
+    adr_in_files = {}
+    for f in adr_files:
+        base = os.path.basename(f)
+        m = re.match(r"(ADR-\d{4})_", base)
+        if not m:
+            continue
+        text = read_text(f)
+        fm = parse_frontmatter(text)
+        status = (fm.get("status", "").strip() if fm else "")
+        adr_in_files[m.group(1)] = (f, status)
+    # _index.md 解析
+    if not os.path.exists(index_path):
+        if adr_files:
+            issues.append(Issue("ADR 突合", adr_dir,
+                                f"ADR ファイルが {len(adr_files)} 件あるが _index.md が無い"))
+        return issues
+    # _index.md は索引「表」を一次情報とする。説明文や凡例の地の文中に
+    # 偶然 ADR-NNNN が出ても誤検出しないよう、表セル限定で抽出する。
+    adr_in_index = set()
+    for cells in parse_markdown_table(index_path)[1:]:  # ヘッダ行除く
+        for cell in cells:
+            for hit in re.findall(r"\bADR-\d{4}\b", cell):
+                adr_in_index.add(hit)
+    # ファイル → 索引の方向
+    for adr_id, (f, status) in adr_in_files.items():
+        if adr_id not in adr_in_index:
+            issues.append(Issue("ADR 突合", f,
+                                f"'{adr_id}' が _index.md に未掲載(索引漏れ)"))
+        if not status:
+            issues.append(Issue("ADR 突合", f,
+                                f"'{adr_id}' の frontmatter `status` が未記入"))
+    # 索引 → ファイルの方向
+    for adr_id in adr_in_index:
+        if adr_id not in adr_in_files:
+            issues.append(Issue("ADR 突合", index_path,
+                                f"_index.md に '{adr_id}' の記載があるが対応する ADR ファイルが無い"))
+    return issues
+
+
 def check_tdd_coverage(output_dir, registry_ids):
     """TS-1(受け入れテスト仕様書)があるとき、登録 R-F-* が TS-1 の **表セル** に出現するか確認。
 
@@ -426,10 +558,13 @@ def main():
         issues += check_structure(path, text, fm)
         issues += check_ids(path, text, registry_set)
         issues += check_status(path, fm, plan, plan_exists)
+        issues += check_filename_vs_doc_id(path, fm)
+        issues += check_depends_on(path, fm, plan, plan_exists)
 
-    # 横断: 孤立検出(R-14 RTM があるとき) / AC/AT 網羅(TS-1 があるとき)
+    # 横断: 孤立検出(R-14 RTM があるとき) / AC/AT 網羅(TS-1 があるとき) / ADR 突合
     issues += check_orphans(output_dir, registry_ids)
     issues += check_tdd_coverage(output_dir, registry_ids)
+    issues += check_adr_index(output_dir)
 
     # TBD 集約(オプション)
     tbd_path = None

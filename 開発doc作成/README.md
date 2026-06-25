@@ -132,9 +132,12 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 
 ## ハーネスのバージョン
 
-v0.8 (2026-06 改修3点 ① WORKFLOW.md と harness/02_workflow.md の二重管理を解消し役割を「図と仕様の参照」「Claude の手順」に分離、\
-② 必須テンプレ13本を事前同梱(R-1, R-7, R-8, R-9, R-13, R-14, B-1, B-2, B-6, B-12, D-8, D-9, D-10)、\
-③ check.py を孤立検出・AC/AT 網羅・TBD 集約(`--tbd`)まで拡張、Windows CP932 端末でも ✅/❌ を表示)
+v0.9 (2026-06 改修6点 ① check.py に depends_on 検証 / ファイル名↔doc_id 整合 / ADR 索引突合 を追加、\
+② Phase 0 トリガを許可拡張子 allowlist 方式に変更し OS / エディタ生成ファイルの誤発火を防止、\
+③ CLAUDE.md スリム化(主要ファイル表を `harness/_files_overview.md` に分離、205→約140行)、\
+④ pre-commit フックサンプル + `install-hooks.sh` 同梱、\
+⑤ fixtures に sample_v09 追加し全 4 fixture 後方互換、\
+⑥ ChangeLog 追記)
 
 ハーネス自体の改善要望や不備の報告は、案件作業を進める中で気づいた時点でユーザー → Claude へ伝えてください。\
 `harness/` 配下を改修し、ハーネス本体の変更は `ChangeLog.md` に、\

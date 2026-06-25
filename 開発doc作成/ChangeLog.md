@@ -15,6 +15,30 @@ Fixed — バグ修正
 Security — セキュリティ関連の修正
 
 
+## [0.9.0] - 2026-06-26
+
+### Added
+- `check.py` に **依存検証**(`depends_on` 機械検証)を追加。frontmatter `depends_on` の各IDが `_doc_plan` に存在し、本書が「進行中以上」のとき依存先が「承認済」相当(承認済 / 取り込み済 / ゲート2承認 / 蓄積中)になっているか確認。`harness/02_workflow.md` の Step B「依存関係確認」の機械化
+- `check.py` に **ファイル名 ↔ doc_id 整合検証** を追加。ファイル名先頭(`R-1_xxx.md` → "R-1")と frontmatter `doc_id` の一致を確認。リネーム事故の検出
+- `check.py` に **ADR 索引と ADR ファイル群の突合** を追加。`output/横断/ADR/_index.md` の表セルと `ADR-*.md` ファイル群を双方向に突合し、索引漏れ / 索引のゴースト / `status` 未記入を検出。ADR ディレクトリ自体が無い案件はスキップ
+- **Phase 0 トリガを許可拡張子 allowlist 方式** に変更(`harness/00_intake.md` §0-1)。`.md` / `.txt` / `.docx` / `.pptx` / `.xlsx` / `.pdf` / `.png` / `.jpg` / `.jpeg` / `.gif` / `.svg` のみがトリガ。`.DS_Store` / `Thumbs.db` / `~$*.docx` / `*.tmp` 等の OS / エディタ生成ファイルでの誤発火を防止
+- **pre-commit フック** を同梱(`harness/tools/hooks/pre-commit`)+ **導入スクリプト**(`harness/tools/install-hooks.sh`)。`output/` 配下のファイルが staging に含まれているコミットでのみ `check.py` を自動実行、整合性エラーがあればコミット中断。Windows でシンボリックリンクが使えない環境は自動的にコピーへフォールバック
+- `harness/_files_overview.md` を新規作成。CLAUDE.md にあった「主要ファイル」表を分離して索引化
+- フィクスチャ `harness/tools/fixtures/sample_v09/` を追加(v0.9 で増えた 3 検査をデモ: ファイル名整合 ×1 / 依存検証 ×1 / ADR 突合 ×3 = 5件検出)
+
+### Changed
+- **`CLAUDE.md` をスリム化**(205 → 約 140 行、約 30% 減)
+  - 「主要ファイル」表(約 28 行)を `harness/_files_overview.md` に分離
+  - 「開発手法による分岐」を WF / Agile / Hybrid 各 1 行に圧縮し、詳細手順は `harness/02_workflow.md` に委譲
+  - 3ツール協調フローの冗長な解説文を削除し、表 + リンクに圧縮
+  - 起動時の挙動の各箇条書きを 1〜2 行に圧縮
+- `harness/01_selection_rules.md` の Phase 0 発動条件を新しい allowlist に合わせて更新
+- `input/事前検討資料/README.md` の許可形式・対象外ファイルの説明を更新
+- `harness/tools/README.md` を v0.9 の新検査(依存検証 / ファイル名整合 / ADR 突合)・pre-commit フック導入手順・新フィクスチャ `sample_v09` の説明に更新
+- ハーネスバージョン v0.8 → v0.9
+- **後方互換**: `sample_ok` 0件 / `sample_ng` 6件 / `sample_orphan` 3件 は回帰なし。新検査はそれぞれ「該当ドキュメントが無い案件はスキップ」(ADR は ADR ディレクトリ不在時、依存検証は plan 不在時、ファイル名整合は `_` を含まない名前は対象外)するため、既存案件の挙動を変えない
+
+
 ## [0.8.0] - 2026-06-26
 
 ### Added
