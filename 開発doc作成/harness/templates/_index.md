@@ -118,7 +118,19 @@
 | ID | ドキュメント | ファイル名(予定) | 状態 |
 |---|---|---|---|
 | DM-1 | ドメインモデル(DDD) | `DM-1_ドメインモデル.md` | ✅ |
-| ADR-NNNN | アーキテクチャ決定記録 | `ADR-NNNN_アーキテクチャ決定記録.md` | ✅ |
+| ADR-NNNN | アーキテクチャ決定記録 | `ADR-NNNN_アーキテクチャ決定記録.md`(v0.12〜 `origin` フィールド) | ✅ |
+
+---
+
+## 実装 repo 向けスケルトン(Phase 4・別リポジトリ / v0.12〜)
+
+> 設計 repo と実装 repo を分けて運用するとき、**実装 repo 側に置く**ファイル群。案件ドキュメントのテンプレではなく、別リポジトリ用のスケルトン。使い方は `harness/templates/impl_repo/README.md`、運用は `WORKFLOW.md §8` を参照。
+
+| ファイル | 実装 repo 側の置き先 | 状態 |
+|---|---|---|
+| `impl_repo/CLAUDE_impl.md` | `CLAUDE.md` | ✅ |
+| `impl_repo/docs_design_README.md` | `docs/design/README.md`(submodule 運用時) | ✅ |
+| `impl_repo/pre-commit` | `.git/hooks/pre-commit`(読取専用ガード) | ✅ |
 
 ---
 
@@ -135,3 +147,4 @@
 - 2026-06-23 DM-1 ドメインモデル(DDD) / ADR-NNNN アーキテクチャ決定記録 を v0.6(ドメインモデル・ADR 導入)に伴い生成
 - 2026-06-26 v0.8 必須テンプレ事前同梱: R-1, R-7, R-8, R-9, R-13, R-14, B-1, B-2, B-6, B-12, D-8, D-9, D-10 を生成(計13本を事前同梱化)
 - 2026-06-26 v0.11 DSL 化: 13 本のメタ情報を `harness/spec/templates.py` に集約 + 英語版 R-1 / R-9 / R-13 を `harness/templates/en/` に生成(残り10本は ja 専用、後続で `--stub --lang en` から雛形作成可能)
+- 2026-06-26 v0.12 設計↔実装 同期支援: ADR テンプレに `origin` 追加 + 実装 repo 向けスケルトン `impl_repo/`(CLAUDE_impl.md / docs_design_README.md / pre-commit)を新設

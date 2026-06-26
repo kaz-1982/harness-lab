@@ -4,6 +4,7 @@ title: {{決定の短いタイトル}}
 status: Proposed
 date: YYYY-MM-DD
 deciders: {{決定に関与した人}}
+origin: design
 related: [{{関連ドキュメントID・関連ADR 例: B-2, ADR-0002}}]
 ---
 
@@ -13,6 +14,10 @@ related: [{{関連ドキュメントID・関連ADR 例: B-2, ADR-0002}}]
 > 1つのアーキテクチャ上の意思決定を1ファイルで記録し、`output/横断/ADR/` に蓄積する。
 > 索引は `output/横断/ADR/_index.md`。MADR / Nygard 形式に従い、標準セクション 1〜7 は用いない(`check.py` の標準検証対象外)。
 > B-2 ソフトウェアアーキテクチャ設計書が「決定の結果(構造)」を記すのに対し、ADR は「決定に至った背景・選択肢・トレードオフ」を残す。
+>
+> **`origin` フィールド(v0.12〜)**: この決定がどのフェーズで生まれたかを示す。設計 repo と実装 repo を分けて運用するとき、ADR は両 repo の同期キーになる(WORKFLOW.md §8)。
+> - `origin: design` — 設計フェーズ(Phase 1〜3.5)で生まれた決定。設計 repo が原本。
+> - `origin: implementation` — 実装フェーズ(Phase 4・実装 repo)で生まれた決定。実装中に判明した制約・トレードオフを記録し、後で設計 repo に逆同期して D-* / B-* に反映する。
 
 ## ステータス
 {{Proposed(提案中) / Accepted(承認・有効) / Deprecated(非推奨) / Superseded by ADR-XXXX(後継に置換)}}

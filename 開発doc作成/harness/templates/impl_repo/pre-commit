@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ----------------------------------------------------------------------
+# 実装リポジトリ用 pre-commit 軽量ガード(v0.12〜)
+#
+# docs/design/ は「設計 repo のスナップショット(読み取り専用)」である、
+# というルール(CLAUDE_impl.md)を機械的に補助する軽量ガード。
+# docs/design/ 配下の変更が staging に含まれていたら警告して止める。
+#
+# 設置方法(実装リポジトリ側で実行):
+#   $ cp <設計repo>/harness/templates/impl_repo/pre-commit .git/hooks/pre-commit
+#   $ chmod +x .git/hooks/pre-commit
+#
+# 想定する除外:
+#   - submodule 運用: docs/design はサブモジュールのポインタ更新のみが正当。
+#     ポインタ更新(gitlink)も「意図的な同期コミット」のときだけにしたいので、
+#     既定では止める。意図的な更新は --no-verify でバイパスする。
+#   - 単純コピー運用: sync-to-impl.sh による更新はコミット前提なので、
+#     その同期コミットだけ --no-verify でバイパスする。
+#
+# バイパス(意図的な同期コミットのとき):
+#   $ git commit --no-verify -m "sync: docs/design を設計 repo <hash> に更新"
+# ----------------------------------------------------------------------
+set -euo pipefail
+
+# docs/design/ 配下への変更が staging にあるか(gitlink 含む)
+if git diff --cached --name-only | grep -q '^docs/design/'; then
+    echo "" >&2
+    echo "[pre-commit] ⚠ docs/design/ 配下の変更が staging に含まれています。" >&2
+    echo "[pre-commit]   docs/design/ は設計 repo のスナップショット(読み取り専用)です。" >&2
+    echo "[pre-commit]   - 設計を変えたい場合は ADR を切り(origin: implementation)、設計 repo に戻してください。" >&2
+    echo "[pre-commit]   - 設計 repo からの正規の同期コミットなら、次でバイパスできます:" >&2
+    echo "[pre-commit]       git commit --no-verify -m \"sync: docs/design を更新\"" >&2
+    echo "" >&2
+    exit 1
+fi
+
+exit 0

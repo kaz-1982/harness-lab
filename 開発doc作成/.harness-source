@@ -10,4 +10,4 @@
 # 編集禁止: このファイルの内容を編集すると判定が乱れます。
 # 例外: ハーネス本体側で `git rm .harness-source` するのは禁止です。
 HARNESS_SOURCE_MARKER=true
-HARNESS_VERSION=v0.11
+HARNESS_VERSION=v0.12

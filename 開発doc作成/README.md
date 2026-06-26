@@ -143,9 +143,10 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 
 ## ハーネスのバージョン
 
-v0.11 (2026-06 改修3点 ① セッション間引き継ぎを自動化(`output/_session_log.md` + `check.py --session-start/--session-end`)、\
-② テンプレ DSL 化(`harness/spec/templates.py` + `gen-templates.py` で仕様検証と他言語版雛形生成)、\
-③ 英語対応の第一歩(R-1 / R-9 / R-13 の英語版を `harness/templates/en/` に同梱、残り 10 本は `--stub --lang en` で雛形生成))
+v0.12 (2026-06 設計 repo ↔ 実装 repo 同期支援: ① `harness/tools/sync-to-impl.sh`(設計成果物を実装 repo の `docs/design/` へコピー)、\
+② 実装 repo 向けスケルトン `harness/templates/impl_repo/`(`CLAUDE_impl.md` / `docs/design/README.md` / 読取専用 pre-commit ガード)、\
+③ ADR テンプレに `origin`(設計フェーズ発 / 実装フェーズ発)、④ 同期台帳 `_handoff_to_implementation/_sync_log.md`、\
+⑤ `WORKFLOW.md §8` に submodule セットアップ手順(Win/mac)・影響レベル分類・ADR 同期キー運用を追記)
 
 ハーネス自体の改善要望や不備の報告は、案件作業を進める中で気づいた時点でユーザー → Claude へ伝えてください。\
 `harness/` 配下を改修し、ハーネス本体の変更は `ChangeLog.md` に、\

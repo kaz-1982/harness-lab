@@ -4,6 +4,7 @@ title: サーバサイド言語に TypeScript を採用
 status: Accepted
 date: 2026-06-26
 deciders: テックリード, PM
+origin: design
 related: B-2
 ---
 

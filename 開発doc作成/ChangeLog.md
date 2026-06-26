@@ -15,6 +15,37 @@ Fixed — バグ修正
 Security — セキュリティ関連の修正
 
 
+## [0.12.0] - 2026-06-26
+
+### Added
+- **設計 repo ↔ 実装 repo 同期支援**(v0.12 メインテーマ)。要件・設計 repo(このハーネス)と実装 repo を分けたまま、設計ドキュメントを実装側へ供給し、設計変更を ADR を同期キーに追跡する運用を支える道具立てを整備
+  - `harness/tools/sync-to-impl.sh`: 設計 repo の `output/`(02_要件定義 / 03_基本設計 / 04_画面設計 / 05_詳細設計 / 横断 / 00_事前検討 / _handoff_to_implementation + 状態ファイル)を実装 repo の `docs/design/` へスナップショットコピーする支援スクリプト。**git submodule を使わない単純コピー運用**向け。rsync があれば `--delete` で鏡映、無ければ `cp -a` にフォールバック(Windows Git Bash / macOS / Linux 両対応)。コピー時に `docs/design/README.md`(設計 repo URL + commit hash + 同期日)を自動生成
+  - `harness/templates/impl_repo/`: 実装 repo(Phase 4・別リポジトリ)側に置くスケルトン集
+    - `CLAUDE_impl.md`: 実装 repo 用 CLAUDE.md。「`docs/design/` は読取専用スナップショット / 設計変更は影響レベル判断 → ADR を切る / submodule・単純コピーの同期方式 / TDD 時の Red テスト Green 化」を明文化
+    - `docs_design_README.md`: **submodule 運用時**の `docs/design/README.md` 用マーカー(単純コピーでは sync-to-impl.sh が自動生成するため不要)
+    - `pre-commit`: `docs/design/` 配下の変更が staging にあると警告して止める**読取専用軽量ガード**(正規の同期コミットは `--no-verify` でバイパス)
+    - `README.md`: 上記スケルトンの設置先と使い方
+  - `output/_handoff_to_implementation/_sync_log.md`: 設計 ↔ 実装の**同期台帳**雛形。同期方式 / スナップショット履歴(設計→実装)/ ADR 同期対応表(両 repo の同期キー)/ 逆同期メモ(実装→設計)を記録。**TDD 不採用案件でも使用**(Red テストの有無に関わらず同期追跡のために置かれる)
+
+### Changed
+- **ADR テンプレ frontmatter に `origin` フィールドを追加**(`harness/templates/ADR-NNNN_アーキテクチャ決定記録.md`)。`design`(設計フェーズ Phase 1〜3.5 発)/ `implementation`(実装フェーズ Phase 4 発)を明示し、ADR を両 repo の同期キーとして機能させる。本文に origin の説明ブロックを追記
+- **`WORKFLOW.md §8` を拡充**。§8.1「設計 repo と実装 repo の同期」(submodule / 単純コピーの方式比較、submodule セットアップのコマンド例 = Windows Git Bash / macOS 両対応・相対パス推奨・`.gitmodules` はテンプレ同梱せず add 生成物を相対パス化、`_sync_log.md` への同期記録)、§8.2「ADR を同期キーにした設計変更の扱い」(影響レベル分類 小/中/大 と `origin` 運用)を追加
+- `output/_handoff_to_implementation/README.md` の構成図に `_sync_log.md` を追記、TDD 不採用でも使う旨を明記
+- `harness/_files_overview.md` に `sync-to-impl.sh` / `impl_repo/` / `_sync_log.md` / ADR `origin` を反映
+- `CLAUDE.md` / `README.md` / `.harness-source` / `output/project_profile.md` のバージョン表記を v0.11 → v0.12 に更新
+- ハーネスバージョン v0.11 → v0.12
+- **後方互換**: 新規ファイル追加と ADR `origin` フィールド追加が中心。`check.py` の検査カテゴリは変更なし(ADR は標準検証対象外のため `origin` 追加で破綻しない)。fixtures / golden sample は回帰なし(examples/sample_case 緑 / sample_ng 6件 維持)。同期支援(sync-to-impl.sh / impl_repo / submodule 手順)は分割運用を選んだ案件のみが使うオプションで、単一 repo 運用や既存案件の挙動を変えない
+
+### 決定事項(着手前にユーザーと確定)
+- `.gitmodules` は **テンプレ同梱せず**、WORKFLOW.md §8 に **コマンド例のみ**(add → 相対パス化)を記載
+- `docs/design/` 読取専用化は **CLAUDE_impl.md ルール明記 + 軽量 pre-commit ガード**の2段で、機械的 write 防止までは入れない
+- `new-project.sh` には **submodule 化オプションを追加せず**、WORKFLOW.md §8 の手順記載に留める(submodule 配線は実装 repo 側の関心事のため)
+
+### 見送り(v0.13 以降のバックログ)
+- 中優先度: 残り日本語テンプレ事前同梱 / `check.py` 出力改善(--json / --color)/ Phase 3.5 ゲート2 補強(_test_manifest 突合)
+- 低優先度: DM-1 機械検証 / 循環の重大度区別 / 英語テンプレ継続展開 / `check.py --code-sync`
+
+
 ## [0.11.0] - 2026-06-26
 
 ### Added

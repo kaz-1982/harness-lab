@@ -35,7 +35,8 @@
 | `harness/spec/i18n_labels.py` | 言語別ラベル(v0.11〜)。phase / required_when / mode / 節見出し / ラベル | 言語追加時に拡張 |
 | `harness/templates/PR-1_事前検討サマリ.md` | 事前検討サマリのテンプレ(原典外・ハーネス拡張) | ハーネス改善時のみ改変 |
 | `harness/templates/DM-1_ドメインモデル.md` | ドメインモデルのテンプレ(原典外・ハーネス拡張 / DDD) | ハーネス改善時のみ改変 |
-| `harness/templates/ADR-NNNN_アーキテクチャ決定記録.md` | ADR のテンプレ(原典外・ハーネス拡張 / MADR 形式) | ハーネス改善時のみ改変 |
+| `harness/templates/ADR-NNNN_アーキテクチャ決定記録.md` | ADR のテンプレ(原典外・ハーネス拡張 / MADR 形式 / v0.12〜 `origin` フィールド) | ハーネス改善時のみ改変 |
+| `harness/templates/impl_repo/` | 実装 repo(Phase 4・別リポジトリ)向けスケルトン(v0.12〜)。`CLAUDE_impl.md` / `docs_design_README.md` / 読取専用 `pre-commit` / `README.md` | ハーネス改善時のみ改変 |
 
 ## ツール(`harness/tools/`)
 
@@ -48,6 +49,7 @@
 | `harness/tools/install-hooks.sh` | `.git/hooks/` に pre-commit を導入(v0.9〜) | ハーネス改善時のみ改変 |
 | `harness/tools/new-project.sh` | 新規案件用にハーネス本体をコピー(v0.10〜) | ハーネス改善時のみ改変 |
 | `harness/tools/gen-templates.py` | テンプレ DSL ジェネレータ(v0.11〜)。`--list` / `--check` / `--stub` モード | ハーネス改善時のみ改変 |
+| `harness/tools/sync-to-impl.sh` | 設計成果物を実装 repo の `docs/design/` へ単純コピーする同期支援(v0.12〜)| ハーネス改善時のみ改変 |
 
 ## 案件成果物(`output/`)
 
@@ -71,6 +73,7 @@
 | `output/_handoff_to_claude_design/` | Phase 2 への引き渡しパッケージ(仕様は [WORKFLOW.md §6](../WORKFLOW.md))| Phase 1 完了時に生成 |
 | `output/04_画面設計_from_ClaudeDesign/` | ClaudeDesign の成果物受け取り(仕様は [WORKFLOW.md §7](../WORKFLOW.md))| ユーザーが配置 / Phase 3 で参照 |
 | `output/_handoff_to_implementation/` | Phase 4 への引き渡しパッケージ(Red テスト + 設計参照)| Phase 3.5 完了時に生成(TDD採用時) |
+| `output/_handoff_to_implementation/_sync_log.md` | 設計 ↔ 実装 同期台帳(v0.12〜)。同期した commit / 日付 / ADR を記録。**TDD 不採用でも使用** | 同期の都度追記 |
 
 ## ルート / ドキュメント
 
@@ -94,7 +97,7 @@
 | パス | 役割 | 改変可否 |
 |---|---|---|
 | `meta/README.md` | このディレクトリの説明(案件コピーから除外される / v0.11.1〜) | ハーネス開発時のみ改変 |
-| `meta/v0.12-backlog.md` | v0.12 への引き継ぎバックログ。次セッションが拾う(v0.11.1〜) | v0.12 着手時に消化 |
+| `meta/v0.13-backlog.md` | v0.13 への引き継ぎバックログ。次セッションが拾う | v0.13 着手時に消化 |
 | (将来) `meta/HARNESS_DEV_LOG.md` 等 | ハーネス改修セッションの引き継ぎログ等 | — |
 
 > このディレクトリは `harness/tools/new-project.sh` で案件コピーから除外される。
