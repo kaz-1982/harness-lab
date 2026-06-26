@@ -15,6 +15,7 @@
 # コピー除外:
 #   - .harness-source(マーカー / 本体のみ存在)
 #   - examples/(学習用 / 案件には不要)
+#   - meta/(ハーネス開発専用 / v0.11.1〜)
 #   - .git, .gitignore は残す(案件側で git init し直すかは自由)
 #   - output/_tbd_dashboard.md(check.py --tbd の生成物)
 #   - output/_handoff_*/(以前の案件の引き渡しパッケージ。最初の案件で
@@ -76,6 +77,9 @@ rm -f "${DEST}/.harness-source"
 
 # 学習用 examples/ は案件には不要
 rm -rf "${DEST}/examples"
+
+# ハーネス開発専用の meta/ は案件には不要(v0.11.1〜)
+rm -rf "${DEST}/meta"
 
 # check.py --tbd の生成物
 rm -f "${DEST}/output/_tbd_dashboard.md"
