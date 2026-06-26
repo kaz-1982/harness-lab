@@ -136,6 +136,7 @@
 - [ ] テストコードのテスト名が UT-*/AT-* と機械的に対応している
 - [ ] テストコードが `project_profile.md` の技術スタック / テストフレームワークに準拠
 - [ ] `output/_handoff_to_implementation/` に配置され `_test_manifest.md` がある
+- [ ] `check.py` のテストマニフェスト突合が緑(`_test_manifest.md` の UT-*/AT-* に掲載漏れ・ゴーストが無く D-15 / TS-1 と一致 / v0.13〜)
 - [ ] `_doc_plan.md` が `ゲート2承認` に更新されている
 
 ### 詳細設計 → 実装(Phase 3 / 3.5 → Phase 4)

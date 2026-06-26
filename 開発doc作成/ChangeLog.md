@@ -15,6 +15,40 @@ Fixed — バグ修正
 Security — セキュリティ関連の修正
 
 
+## [0.13.0] - 2026-06-26
+
+### Added
+- **`check.py` テストマニフェスト突合**(検査 11 番目 / Phase 3.5 ゲート2の補強)。`output/_handoff_to_implementation/_test_manifest.md` がある案件で、本表の `UT-*`(単体)/ `AT-*`(受入)を D-15 単体テスト仕様 / TS-1 受け入れテスト仕様と突合する
+  - **掲載漏れ**: D-15 / TS-1 で定義された ID が `_test_manifest` に無い(引き渡し漏れ)
+  - **ゴースト**: `_test_manifest` に書いた ID が D-15 / TS-1 に定義されていない
+  - スキップ: マニフェスト不在(TDD 不採用 / ゲート2前)/ プレースホルダ(`{{ }}`)のみ / 突合先(UT は D-15、AT は TS-1)が存在しない方向は判定しない
+- **テストマニフェスト雛形** `harness/templates/_test_manifest.md` を新設。Phase 3.5 ゲート2 で `output/_handoff_to_implementation/_test_manifest.md` として生成する標準フォーマット(技術スタック / UT-* 表 / AT-* 表 / トレーサビリティ整合)
+- **`check.py --json` モード**。検証結果を機械可読な JSON(`{output_dir, ok, summary{docs, total, error, warning, by_kind}, issues[{kind, severity, path, line, message}]}`)で stdout に出力。CI でのパース・件数集計用。問題があれば終了コード 1
+- **`check.py --color` モード**。検査の重大度ごとに ANSI カラーで色分け(error=赤 / warning=黄 / OK=緑)。`SEVERITY_BY_KIND` で 11 検査を error / warning に分類
+- **指摘への行番号付与**。`Issue` に `line` を追加し、ID整合(未登録参照IDの初出行)・用語整合(使用禁止語の出現行)で行番号を出力(`path:Lnn:`)。分からない検査は従来どおり行番号なし
+- **ぶら下がり依存テンプレ5本を事前同梱**(計13本 → 18本)。既存同梱テンプレの `depends_on` が指していたが実体が無かった上流ドキュメントを埋める
+  - R-4 概念データモデル(B-12 が依存)/ R-5 ユースケース図・R-6 ユースケース記述(R-8 が依存)/ R-12 制約条件一覧(B-1 が依存)/ R-15 ステークホルダー一覧(横断・参照頻度大)
+  - DSL `harness/spec/templates.py` に5本を登録。`required_when` キー `recommended`(推奨)/ `uml_required`(UMLベース開発で必須)を `spec/templates.py` と `spec/i18n_labels.py`(ja / en)に追加
+- 新規 fixture `harness/tools/fixtures/sample_v13_manifest/`(テストマニフェスト突合の異常系。掲載漏れ UT-002 + ゴースト AT-999 = 2件検出)
+
+### Changed
+- `check.py` 冒頭 docstring に検査 11(テストマニフェスト突合)・`--json` / `--color` オプションを追記。終了コードの方針(severity は表示・分類用で、warning でも 1 件あれば exit 1)を明記
+- 出力ロジックを `render_text`(色対応)/ `render_json` に分離。テキスト出力に検査種別の `[error]` / `[warning]` ラベルと error / warning 件数の内訳を追加
+- `harness/02_workflow.md` §9.5-② / `harness/03_quality_checklist.md` ゲート2 / `WORKFLOW.md` ゲート2完了基準 に、テストマニフェスト突合の確認を追記。`_test_manifest.md` の雛形参照先を明記
+- `harness/templates/_index.md`(R-4/R-5/R-6/R-12/R-15 を ✅、`_test_manifest.md` 追加、生成記録追記、生成方針を「計18本」に更新)/ `harness/tools/README.md`(新検査・`--json`/`--color`・新 fixture・拡張方針の消化済み整理)/ `harness/_files_overview.md`(check.py 役割・`_test_manifest.md`・新 fixture)を反映
+- `CLAUDE.md` / `README.md` / `.harness-source` / `output/project_profile.md` のバージョン表記を v0.12 → v0.13 に更新
+- ハーネスバージョン v0.12 → v0.13
+- **後方互換**: `sample_ok` 0件 / `sample_ng` 6件 / `sample_orphan` 3件 / `sample_v09` 5件 / `sample_v10_glossary` 1件 / `sample_v10_cycle` 1件 / golden `examples/sample_case` 緑 は回帰なし。テストマニフェスト突合は `_test_manifest.md` 不在案件ではスキップするため既存案件に影響なし。`--json` / `--color` は未指定時は従来のテキスト出力。新テンプレ5本は事前同梱の追加で、`gen-templates.py --check` は18本すべて緑
+
+### 決定事項(着手前にユーザーと確定)
+- v0.13 のスコープは中優先度3項目すべて(check.py 出力改善 + ゲート2補強 + 残テンプレ同梱)
+- 残テンプレ同梱は「全21本」ではなく **ぶら下がり依存を閉じる5本**に絞り、残りは v0.14 バックログへ(品質維持のため)
+
+### 見送り(v0.14 以降のバックログ)
+- 残り日本語テンプレ事前同梱(R-2/R-3/R-10/R-11、B-3〜B-19 残、D-1〜D-14 残)
+- DM-1 機械検証(`AG-`/`VO-`/`E-` ↔ B-12/B-13)/ depends_on 循環の重大度区別 / 残10本の英語テンプレ展開 / `_sync_log.md` 機械検証 / sync-to-impl.sh 逆方向 / `check.py --code-sync`
+
+
 ## [0.12.0] - 2026-06-26
 
 ### Added

@@ -27,6 +27,8 @@ LABELS = {
             "wf_required_agile_lightweight": "WF / ハイブリッド上流で必須 / アジャイルで軽量版",
             "mid_scale_recommended": "中規模以上で推奨 / 金融・医療・公共では小規模でも必須 / TDD採用時はテストID列を充填",
             "bpr_required": "BPR時必須",
+            "recommended": "推奨(規模・複雑度に応じて判断)",
+            "uml_required": "UMLベース開発で必須",
         },
         "mode": {
             "both": "両対応",
@@ -82,6 +84,8 @@ LABELS = {
             "wf_required_agile_lightweight": "Required for WF; lightweight version OK for Agile",
             "mid_scale_recommended": "Recommended for mid-scale or larger; required for finance/healthcare/public sector even at small scale; fill test ID column when TDD is used",
             "bpr_required": "Required when BPR is involved",
+            "recommended": "Recommended (decide by scale/complexity)",
+            "uml_required": "Required for UML-based development",
         },
         "mode": {
             "both": "Both",

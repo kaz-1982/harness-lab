@@ -35,13 +35,17 @@ REQUIRED_WHEN_KEYS = (
     "wf_required_agile_lightweight",   # WF必須 / Agile軽量
     "mid_scale_recommended",           # 中規模以上で推奨
     "bpr_required",                    # BPR時必須
+    "recommended",                     # 推奨(規模・複雑度で判断)
+    "uml_required",                    # UMLベース開発で必須
 )
 
 MODE_KEYS = ("both", "wf", "agile")
 
 
 # ---------------------------------------------------------------
-# テンプレ仕様(13 本)
+# テンプレ仕様(18 本)
+# v0.13 で R-4 / R-5 / R-6 / R-12 / R-15 を追加(既存同梱13本の depends_on の
+# ぶら下がり解消 + 横断のステークホルダー一覧)。
 # ---------------------------------------------------------------
 
 TEMPLATES = {
@@ -135,6 +139,92 @@ TEMPLATES = {
                 "4.6 Security",
                 "4.7 Maintainability",
                 "4.8 Portability",
+            ],
+        },
+    },
+    "R-4": {
+        "phase_key": "requirements",
+        "required_when_key": "recommended",
+        "depends_on": ["R-1"],
+        "mode_key": "both",
+        "names": {
+            "ja": "概念データモデル",
+        },
+        "section4_titles": {
+            "ja": [
+                "4.1 主要エンティティ(名詞抽出)",
+                "4.2 エンティティ間の関係",
+                "4.3 主要な属性(必要最小限)",
+                "4.4 概念ER図",
+            ],
+        },
+    },
+    "R-5": {
+        "phase_key": "requirements",
+        "required_when_key": "uml_required",
+        "depends_on": ["R-1", "R-3"],
+        "mode_key": "both",
+        "names": {
+            "ja": "ユースケース図",
+        },
+        "section4_titles": {
+            "ja": [
+                "4.1 アクター一覧",
+                "4.2 ユースケース一覧",
+                "4.3 関連(include / extend / 汎化)",
+                "4.4 ユースケース図",
+            ],
+        },
+    },
+    "R-6": {
+        "phase_key": "requirements",
+        "required_when_key": "uml_required",
+        "depends_on": ["R-5"],
+        "mode_key": "both",
+        "names": {
+            "ja": "ユースケース記述",
+        },
+        "section4_titles": {
+            "ja": [
+                "4.1 ユースケース記述一覧",
+                "4.2 主シナリオ(基本フロー)",
+                "4.3 代替・例外シナリオ",
+                "4.4 事前条件・事後条件",
+                "4.5 頻度・優先度",
+            ],
+        },
+    },
+    "R-12": {
+        "phase_key": "requirements",
+        "required_when_key": "recommended",
+        "depends_on": ["R-1"],
+        "mode_key": "both",
+        "names": {
+            "ja": "制約条件一覧",
+        },
+        "section4_titles": {
+            "ja": [
+                "4.1 技術的制約",
+                "4.2 法的制約",
+                "4.3 予算・スケジュール制約",
+                "4.4 組織的制約",
+            ],
+        },
+    },
+    "R-15": {
+        "phase_key": "crosscut",
+        "required_when_key": "recommended",
+        "depends_on": [],
+        "mode_key": "both",
+        "names": {
+            "ja": "ステークホルダー一覧",
+        },
+        "section4_titles": {
+            "ja": [
+                "4.1 ステークホルダー一覧",
+                "4.2 関与度(RACI)",
+                "4.3 主要関心事",
+                "4.4 連絡方法・コミュニケーション計画",
             ],
         },
     },

@@ -29,6 +29,7 @@
 | `harness/templates/_format.md` | テンプレ共通フォーマット規約 | ハーネス改善時のみ改変 |
 | `harness/templates/_index.md` | テンプレ一覧と生成方針(✅事前同梱 / ⬜遅延生成) | テンプレ追加時に更新 |
 | `harness/templates/_test_code_convention.md` | テストコード生成規約(言語非依存 / TDD 時) | ハーネス改善時のみ改変 |
+| `harness/templates/_test_manifest.md` | テストマニフェスト雛形(v0.13〜 / Phase 3.5 ゲート2)。`check.py` のテストマニフェスト突合の入力 | ハーネス改善時のみ改変 |
 | `harness/templates/{doc_id}_*.md` | 各ドキュメントのテンプレ(原典準拠 + ハーネス拡張)/ 日本語版正本 | 必要時に input から生成 |
 | `harness/templates/{lang}/{doc_id}_*.md` | 他言語版テンプレ(v0.11〜)。例: `templates/en/R-1_*.md` | `gen-templates.py --stub` で雛形生成後に手動加筆 |
 | `harness/spec/templates.py` | テンプレ仕様の中央台帳(v0.11〜)。13 本のメタ情報を一元管理 | テンプレ追加・改廃時に改変 |
@@ -42,9 +43,9 @@
 
 | パス | 役割 | 改変可否 |
 |---|---|---|
-| `harness/tools/check.py` | 整合性検証スクリプト(構造 / ID / 状態 / 孤立 / AC-AT / ファイル名 / 依存 / ADR / TBD 集約) | ハーネス改善時のみ改変 |
+| `harness/tools/check.py` | 整合性検証スクリプト(構造 / ID / 状態 / 孤立 / AC-AT / ファイル名 / 依存 / ADR / 用語 / 循環 / テストマニフェスト + TBD 集約。v0.13〜 `--json` / `--color` / 行番号) | ハーネス改善時のみ改変 |
 | `harness/tools/README.md` | check.py の使用法 | ハーネス改善時のみ改変 |
-| `harness/tools/fixtures/` | check.py の自己検証 fixture(sample_ok / sample_ng / sample_orphan / sample_v09 / sample_v10_glossary / sample_v10_cycle) | ハーネス改善時のみ改変 |
+| `harness/tools/fixtures/` | check.py の自己検証 fixture(sample_ok / sample_ng / sample_orphan / sample_v09 / sample_v10_glossary / sample_v10_cycle / sample_v13_manifest) | ハーネス改善時のみ改変 |
 | `harness/tools/hooks/pre-commit` | Git pre-commit フックサンプル(v0.9〜) | ハーネス改善時のみ改変 |
 | `harness/tools/install-hooks.sh` | `.git/hooks/` に pre-commit を導入(v0.9〜) | ハーネス改善時のみ改変 |
 | `harness/tools/new-project.sh` | 新規案件用にハーネス本体をコピー(v0.10〜) | ハーネス改善時のみ改変 |
@@ -97,7 +98,7 @@
 | パス | 役割 | 改変可否 |
 |---|---|---|
 | `meta/README.md` | このディレクトリの説明(案件コピーから除外される / v0.11.1〜) | ハーネス開発時のみ改変 |
-| `meta/v0.13-backlog.md` | v0.13 への引き継ぎバックログ。次セッションが拾う | v0.13 着手時に消化 |
+| `meta/v0.14-backlog.md` | v0.14 への引き継ぎバックログ。次セッションが拾う | v0.14 着手時に消化 |
 | (将来) `meta/HARNESS_DEV_LOG.md` 等 | ハーネス改修セッションの引き継ぎログ等 | — |
 
 > このディレクトリは `harness/tools/new-project.sh` で案件コピーから除外される。

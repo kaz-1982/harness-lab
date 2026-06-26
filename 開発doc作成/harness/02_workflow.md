@@ -277,8 +277,8 @@ Phase 1 の以下が満たされたら、引き渡しパッケージを生成す
 
 1. `UT-*`/`AT-*` に1対1対応する実行可能テストコードを生成(`project_profile.md` の技術スタック / テストフレームワーク準拠。規約は `harness/templates/_test_code_convention.md`)。
 2. **全テストが Red(失敗)で実行できることを確認**(コンパイル/解釈は通り、アサーションで fail)。実行ログを `_review_log.md` に添付。
-3. `output/_handoff_to_implementation/tests/{unit,acceptance}/` に配置し、`_test_manifest.md`(UT/AT ↔ テストファイル ↔ 要件 の対応表)を作成。
-4. Step F の整合性チェック(「Phase 3.5 ゲート2」)を実行。
+3. `output/_handoff_to_implementation/tests/{unit,acceptance}/` に配置し、`_test_manifest.md`(UT/AT ↔ テストファイル ↔ 要件 の対応表。雛形は `harness/templates/_test_manifest.md`)を作成。
+4. Step F の整合性チェック(「Phase 3.5 ゲート2」)を実行。`check.py` の **テストマニフェスト突合**(v0.13〜)で `_test_manifest.md` の `UT-*` / `AT-*` が D-15 / TS-1 と過不足なく対応しているか(掲載漏れ・ゴーストが無いか)を確認する。
 5. **★ゲート2**: Red テストコードをユーザーがレビュー・承認。`_doc_plan.md` を `ゲート2承認` に。
 
 アジャイル運用では Just Enough により、ゲート1+ゲート2を1回のレビューに統合してよい。

@@ -16,27 +16,36 @@
   8. ADR 突合(v0.9)       — output/横断/ADR/ がある案件で、ADR ファイル群と _index.md の対応・status 記入
   9. 用語整合(v0.10)      — R-13 用語集の「使用禁止語」が他ドキュメント本文に出現していないか
  10. 循環検出(v0.10)      — 全ドキュメントの depends_on を DAG として集約し循環参照を検出
+ 11. テストマニフェスト突合(v0.13)
+                         — _handoff_to_implementation/_test_manifest.md と D-15 / TS-1 の
+                            UT-* / AT-* を突合(掲載漏れ / ゴーストを検出。Phase 3.5 ゲート2の補強)
 
 オプション:
   --tbd               TBD を _tbd_dashboard.md に集約出力(これだけが書き込みを行う)
+  --json              検証結果を機械可読な JSON で stdout に出力(CI 連携用。人間向けの囲み出力は抑制)
+  --color             重大度ごとに ANSI カラーで色分け(error=赤 / warning=黄)。exit code は不変
   --session-start     直近セッションのログ末尾エントリを stdout に表示(セッション再開時に Claude が読む)
   --session-end       新規セッションエントリのテンプレを stdout に出力(セッション終了時にコピペして使う)
 
 使い方:
   python3 harness/tools/check.py [OUTPUT_DIR]                 # 検証のみ。既定は ./output
   python3 harness/tools/check.py --tbd [OUTPUT_DIR]           # 検証 + TBD ダッシュボード生成
+  python3 harness/tools/check.py --json [OUTPUT_DIR]          # 検証結果を JSON で出力
+  python3 harness/tools/check.py --color [OUTPUT_DIR]         # 重大度を色分けして出力
   python3 harness/tools/check.py --session-start [OUTPUT_DIR] # 末尾セッションログを表示
   python3 harness/tools/check.py --session-end [OUTPUT_DIR]   # 新規エントリのテンプレを表示
   python3 harness/tools/check.py --help
 
-検証は read-only(--tbd 指定時のみ _tbd_dashboard.md に書き込む / --session-* はどちらも stdout のみ)。
-問題があれば終了コード 1、なければ 0(ディレクトリ不在は 2)。
+検証は read-only(--tbd 指定時のみ _tbd_dashboard.md に書き込む / --json --color --session-* は stdout のみ)。
+問題があれば終了コード 1、なければ 0(ディレクトリ不在は 2)。重大度(severity)は表示・JSON 上の分類で、
+warning であっても 1 件でも検出があれば終了コードは 1(網羅性を落とさないため)。
 """
 
 import os
 import re
 import sys
 import glob
+import json
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 
@@ -67,14 +76,38 @@ EXCLUDE_NAMES = {"README.md", "project_profile.md"}
 EXCLUDE_DIRS = {"ADR"}
 
 
+# 検査種別ごとの重大度(v0.13)。色分け・JSON 上の分類にのみ使用し、終了コードは変えない。
+# error   = 形式・参照・整合の崩れ(放置すると後工程が壊れる)
+# warning = 取りこぼし・前後関係の疑い(意味レビューで判断する余地がある)
+SEVERITY_BY_KIND = {
+    "構造": "error",
+    "ID整合": "error",
+    "状態突合": "error",
+    "ファイル名整合": "error",
+    "循環検出": "error",
+    "ADR 突合": "error",
+    "依存検証": "warning",
+    "孤立検出": "warning",
+    "AC/AT 網羅": "warning",
+    "用語整合": "warning",
+    "テストマニフェスト": "warning",
+}
+
+
 class Issue:
-    def __init__(self, kind, path, message):
+    def __init__(self, kind, path, message, line=None):
         self.kind = kind
         self.path = path
         self.message = message
+        self.line = line  # 1始まりの行番号(分かる検査のみ。不明なら None)
+
+    @property
+    def severity(self):
+        return SEVERITY_BY_KIND.get(self.kind, "error")
 
     def __str__(self):
-        return f"    {self.path}: {self.message}"
+        loc = f"{self.path}:L{self.line}" if self.line else self.path
+        return f"    {loc}: {self.message}"
 
 
 # ===================================================================
@@ -204,9 +237,19 @@ def check_structure(path, text, fm):
 
 def check_ids(path, text, registry_set):
     issues = []
+    lines = text.splitlines()
+
+    def first_line_of(rid):
+        for i, line in enumerate(lines, 1):
+            if rid in line:
+                return i
+        return None
+
     for rid in sorted(set(ID_PATTERN.findall(text))):
         if rid not in registry_set:
-            issues.append(Issue("ID整合", path, f"参照ID '{rid}' が _id_registry に未登録"))
+            issues.append(Issue("ID整合", path,
+                                f"参照ID '{rid}' が _id_registry に未登録",
+                                line=first_line_of(rid)))
     return issues
 
 
@@ -413,6 +456,71 @@ def check_tdd_coverage(output_dir, registry_ids):
 
 
 # ===================================================================
+# テストマニフェスト突合(v0.13・Phase 3.5 ゲート2の補強)
+# ===================================================================
+
+def check_test_manifest(output_dir):
+    """_handoff_to_implementation/_test_manifest.md と D-15 / TS-1 の UT-* / AT-* を突合(v0.13〜)。
+
+    Phase 3.5 ゲート2(Red コード引き渡し)で生成される `_test_manifest.md` が、
+    テスト仕様(D-15 の UT-* / TS-1 の AT-*)と過不足なく対応しているかを確認する。
+
+    検出する不整合:
+      - 掲載漏れ : D-15 / TS-1 で定義された UT-* / AT-* が _test_manifest に載っていない
+      - ゴースト : _test_manifest に載っている UT-* / AT-* が D-15 / TS-1 に定義されていない
+
+    スキップ条件:
+      - _test_manifest.md が無い(TDD 不採用 / ゲート2前)案件
+      - _test_manifest に UT-* / AT-* がまだ無い(雛形のみ / プレースホルダ段階)
+      - 突合する側の仕様(UT は D-15、AT は TS-1)が存在しない方向は判定しない
+    """
+    issues = []
+    manifest_path = os.path.join(output_dir, "_handoff_to_implementation", "_test_manifest.md")
+    if not os.path.exists(manifest_path):
+        return issues
+
+    # マニフェストの表セルから UT-* / AT-* を抽出(地の文の誤検出を避けるため表セル限定)
+    manifest_ids = set()
+    for cells in parse_markdown_table(manifest_path)[1:]:  # ヘッダ行除く
+        for cell in cells:
+            if "{{" in cell:
+                continue  # テンプレのプレースホルダ行
+            for hit in re.findall(r"\b(?:UT|AT)-\d{3,}\b", cell):
+                manifest_ids.add(hit)
+    manifest_ut = {x for x in manifest_ids if x.startswith("UT-")}
+    manifest_at = {x for x in manifest_ids if x.startswith("AT-")}
+    if not manifest_ids:
+        return issues  # 雛形のみ。ゲート2未実施として警告しない
+
+    # 定義側: D-15 の UT-* / TS-1 の AT-*(本文全体から拾う。TS-1 の AT 収集に倣う)
+    d15_path = find_doc(output_dir, "D-15")
+    ts1_path = find_doc(output_dir, "TS-1")
+    ut_defined = set(re.findall(r"\bUT-\d{3,}\b", read_text(d15_path))) if d15_path else None
+    at_defined = set(re.findall(r"\bAT-\d{3,}\b", read_text(ts1_path))) if ts1_path else None
+
+    # 掲載漏れ(定義 → マニフェスト)
+    if ut_defined is not None:
+        for uid in sorted(ut_defined - manifest_ut):
+            issues.append(Issue("テストマニフェスト", manifest_path,
+                                f"D-15 で定義された '{uid}' が _test_manifest に未掲載(引き渡し漏れの可能性)"))
+    if at_defined is not None:
+        for aid in sorted(at_defined - manifest_at):
+            issues.append(Issue("テストマニフェスト", manifest_path,
+                                f"TS-1 で定義された '{aid}' が _test_manifest に未掲載(引き渡し漏れの可能性)"))
+
+    # ゴースト(マニフェスト → 定義)。突合先が存在する方向のみ判定する
+    if ut_defined is not None:
+        for uid in sorted(manifest_ut - ut_defined):
+            issues.append(Issue("テストマニフェスト", manifest_path,
+                                f"_test_manifest の '{uid}' が D-15 に定義されていない(ゴースト)"))
+    if at_defined is not None:
+        for aid in sorted(manifest_at - at_defined):
+            issues.append(Issue("テストマニフェスト", manifest_path,
+                                f"_test_manifest の '{aid}' が TS-1 に定義されていない(ゴースト)"))
+    return issues
+
+
+# ===================================================================
 # 用語整合(v0.10)
 # ===================================================================
 
@@ -480,7 +588,8 @@ def check_glossary(output_dir, docs):
                     continue
                 if forbidden_word in line:
                     issues.append(Issue("用語整合", path,
-                                        f"L{i}: 使用禁止語 '{forbidden_word}' が出現(R-13 で '{canonical}' に統一)"))
+                                        f"使用禁止語 '{forbidden_word}' が出現(R-13 で '{canonical}' に統一)",
+                                        line=i))
                     break  # 1ファイル × 1禁止語 で1件のみ
     return issues
 
@@ -762,12 +871,19 @@ def main():
         return 0
 
     do_tbd = "--tbd" in sys.argv
+    do_json = "--json" in sys.argv
+    do_color = "--color" in sys.argv
     do_session_start = "--session-start" in sys.argv
     do_session_end = "--session-end" in sys.argv
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     output_dir = args[0] if args else "output"
     if not os.path.isdir(output_dir):
-        print(f"ERROR: ディレクトリが見つかりません: {output_dir}")
+        if do_json:
+            print(json.dumps({"output_dir": output_dir, "error": "directory_not_found",
+                              "ok": False, "issues": [], "total": 0},
+                             ensure_ascii=False, indent=2))
+        else:
+            print(f"ERROR: ディレクトリが見つかりません: {output_dir}")
         return 2
 
     # セッション補助モードは検証を行わず単独で動作
@@ -808,6 +924,7 @@ def main():
     #       用語整合(R-13 があるとき)/ 循環検出
     issues += check_orphans(output_dir, registry_ids)
     issues += check_tdd_coverage(output_dir, registry_ids)
+    issues += check_test_manifest(output_dir)
     issues += check_adr_index(output_dir)
     issues += check_glossary(output_dir, docs)
     issues += check_circular_deps(docs)
@@ -821,6 +938,35 @@ def main():
         tbd_path = write_tbd_dashboard(output_dir, tbd_entries)
 
     # ---- 出力 ----
+    if do_json:
+        return render_json(output_dir, docs, registry_ids, reg_exists,
+                           plan_exists, issues, do_tbd, tbd_count, tbd_path)
+    return render_text(output_dir, docs, registry_ids, reg_exists,
+                       plan_exists, issues, do_tbd, tbd_count, tbd_path, do_color)
+
+
+# ===================================================================
+# 出力レンダラ(v0.13: テキスト / JSON / カラー)
+# ===================================================================
+
+# ANSI カラーコード(--color 指定時のみ使用)
+_ANSI = {
+    "error": "\033[31m",    # 赤
+    "warning": "\033[33m",  # 黄
+    "ok": "\033[32m",       # 緑
+    "dim": "\033[2m",
+    "reset": "\033[0m",
+}
+
+
+def _paint(text, key, enable):
+    if not enable:
+        return text
+    return f"{_ANSI.get(key, '')}{text}{_ANSI['reset']}"
+
+
+def render_text(output_dir, docs, registry_ids, reg_exists,
+                plan_exists, issues, do_tbd, tbd_count, tbd_path, do_color):
     print("=" * 64)
     print(f"ハーネス整合性チェック: {output_dir}")
     print("=" * 64)
@@ -832,23 +978,68 @@ def main():
     print("-" * 64)
 
     if not issues:
-        print("  ✅ 機械チェックは問題なし")
+        print("  " + _paint("✅ 機械チェックは問題なし", "ok", do_color))
         print("-" * 64)
         print("  注意: 検証したのは形式・参照・整合のみ。")
         print("  意味の妥当性(要件の正しさ・期待結果の妥当性)は別途レビューが必要です。")
         return 0
 
+    n_error = sum(1 for i in issues if i.severity == "error")
+    n_warning = len(issues) - n_error
+
     by_kind = {}
     for iss in issues:
         by_kind.setdefault(iss.kind, []).append(iss)
-    for kind in sorted(by_kind):
-        print(f"  ● {kind}: {len(by_kind[kind])} 件")
+    for kind in sorted(by_kind, key=lambda k: (SEVERITY_BY_KIND.get(k, "error") != "error", k)):
+        sev = SEVERITY_BY_KIND.get(kind, "error")
+        head = f"  ● [{sev}] {kind}: {len(by_kind[kind])} 件"
+        print(_paint(head, sev, do_color))
         for iss in by_kind[kind]:
-            print(str(iss))
+            print(_paint(str(iss), sev, do_color))
         print()
     print("-" * 64)
-    print(f"  ❌ 合計 {len(issues)} 件の問題を検出(意味の妥当性は別途レビュー)")
+    summary = f"  ❌ 合計 {len(issues)} 件の問題を検出(error {n_error} / warning {n_warning}・意味の妥当性は別途レビュー)"
+    print(_paint(summary, "error" if n_error else "warning", do_color))
     return 1
+
+
+def render_json(output_dir, docs, registry_ids, reg_exists,
+                plan_exists, issues, do_tbd, tbd_count, tbd_path):
+    """検証結果を機械可読な JSON で stdout に出力(CI 連携用)。"""
+    n_error = sum(1 for i in issues if i.severity == "error")
+    n_warning = len(issues) - n_error
+    by_kind = defaultdict(int)
+    for iss in issues:
+        by_kind[iss.kind] += 1
+    payload = {
+        "output_dir": output_dir,
+        "ok": not issues,
+        "summary": {
+            "docs": len(docs),
+            "registry_ids": len(registry_ids),
+            "registry_exists": reg_exists,
+            "plan_exists": plan_exists,
+            "total": len(issues),
+            "error": n_error,
+            "warning": n_warning,
+            "by_kind": dict(by_kind),
+        },
+        "issues": [
+            {
+                "kind": iss.kind,
+                "severity": iss.severity,
+                "path": iss.path.replace(os.sep, "/"),
+                "line": iss.line,
+                "message": iss.message,
+            }
+            for iss in issues
+        ],
+    }
+    if do_tbd:
+        payload["tbd"] = {"count": tbd_count,
+                          "path": (tbd_path.replace(os.sep, "/") if tbd_path else None)}
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0 if not issues else 1
 
 
 if __name__ == "__main__":

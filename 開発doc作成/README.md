@@ -143,10 +143,11 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 
 ## ハーネスのバージョン
 
-v0.12 (2026-06 設計 repo ↔ 実装 repo 同期支援: ① `harness/tools/sync-to-impl.sh`(設計成果物を実装 repo の `docs/design/` へコピー)、\
-② 実装 repo 向けスケルトン `harness/templates/impl_repo/`(`CLAUDE_impl.md` / `docs/design/README.md` / 読取専用 pre-commit ガード)、\
-③ ADR テンプレに `origin`(設計フェーズ発 / 実装フェーズ発)、④ 同期台帳 `_handoff_to_implementation/_sync_log.md`、\
-⑤ `WORKFLOW.md §8` に submodule セットアップ手順(Win/mac)・影響レベル分類・ADR 同期キー運用を追記)
+v0.13 (2026-06 検証・テンプレ拡充: ① `check.py` 出力改善 — `--json`(CI 連携)/ `--color`(error=赤・warning=黄)/ ID整合・用語整合に行番号、\
+② Phase 3.5 ゲート2補強 — `_test_manifest.md` の `UT-*`/`AT-*` を D-15 / TS-1 と突合(掲載漏れ・ゴースト検出)+ 雛形テンプレ新設、\
+③ ぶら下がり依存テンプレ5本を事前同梱 — R-4 概念データモデル / R-5 ユースケース図 / R-6 ユースケース記述 / R-12 制約条件一覧 / R-15 ステークホルダー一覧(DSL 登録で計18本))
+
+過去: v0.12 (設計 repo ↔ 実装 repo 同期支援: `sync-to-impl.sh` / 実装 repo スケルトン `impl_repo/` / ADR `origin` / 同期台帳 `_sync_log.md` / `WORKFLOW.md §8` submodule 手順)
 
 ハーネス自体の改善要望や不備の報告は、案件作業を進める中で気づいた時点でユーザー → Claude へ伝えてください。\
 `harness/` 配下を改修し、ハーネス本体の変更は `ChangeLog.md` に、\
