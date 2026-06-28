@@ -70,7 +70,7 @@ Phase 3.5(テスト具体化 + レビューゲート)は「テスト戦略 = TDD
 .
 ├── CLAUDE.md                                 # Claude 向け運用ルール(最重要)
 ├── README.md                                 # このファイル
-├── WORKFLOW.md                               # 3ツール協調フローの全体図(Mermaid)
+├── WORKFLOW.md                               # 3ツール協調フローの全体図(drawio.svg / diagrams/)
 ├── ChangeLog.md                              # ハーネス本体の改修履歴
 ├── input/
 │   ├── システム開発設計ドキュメント一覧.md   # 原典(改変禁止)

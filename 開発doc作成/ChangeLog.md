@@ -15,6 +15,15 @@ Fixed — バグ修正
 Security — セキュリティ関連の修正
 
 
+## [0.14.0] - 2026-06-28
+
+### Changed
+- **`WORKFLOW.md` の図を Mermaid → `.drawio.svg`(編集可能 SVG)に全面移行**。従来 v0.10 で「案件成果物の図は `.drawio.svg` 正本、ハーネス取説図(`WORKFLOW.md`)の Mermaid は対象外」としていた例外を撤廃し、取説図も `.drawio.svg` に統一した。理由は **Mermaid はテキスト構文の修正が人にとって難しく、Draw.io なら GUI から直感的に編集できる**ため(ユーザー要望)。
+  - 対象は §1 全体フロー / §4 ドキュメント間依存 / §5 フェーズ移行シーケンス / §7.5 テスト依存 の 4 図。
+  - 生成物は `diagrams/workflow_overview.drawio.svg` / `workflow_doc_dependencies.drawio.svg` / `workflow_phase_sequence.drawio.svg` / `workflow_test_dependencies.drawio.svg` の 4 ファイル。本文からは `![…](diagrams/…)` で参照。
+  - 各 `.drawio.svg` は **表示用 SVG と編集用 mxGraphModel(SVG の `content` 属性に埋め込み)を同一座標から一貫生成**しており、GitHub / VS Code / Markdown プレビューで画像表示でき、かつ Draw.io デスクトップ / VS Code 拡張「Draw.io Integration」で開けば GUI 編集できる(表示と編集が一致)。
+  - 付随して `README.md`(構成図の注記)/ `harness/02_workflow.md`(役割分担の注記)の「Mermaid」表記を「drawio.svg」に更新。
+
 ## [0.13.0] - 2026-06-26
 
 ### Added

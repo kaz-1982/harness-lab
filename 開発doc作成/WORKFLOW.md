@@ -4,88 +4,13 @@
 
 このファイルはワークフローの公式図です。具体的な手順は [harness/02_workflow.md](harness/02_workflow.md) を参照してください。
 
+> 本書の図はすべて **`.drawio.svg` 形式を正本**とし `diagrams/` 配下に置いています。GitHub / VS Code / Markdown プレビューでは画像として表示され、**Draw.io デスクトップ / VS Code 拡張「Draw.io Integration」で開けば GUI から直感的に編集できます**(Mermaid は人手での修正が難しいため廃止)。
+
 ---
 
 ## 1. 全体フロー
 
-```mermaid
-flowchart TB
-  classDef cc1 fill:#E0F2FE,stroke:#0369A1,color:#0C4A6E
-  classDef cd  fill:#FCE7F3,stroke:#BE185D,color:#831843
-  classDef cc2 fill:#DCFCE7,stroke:#15803D,color:#14532D
-  classDef io  fill:#FEF9C3,stroke:#A16207,color:#713F12
-  classDef gate fill:#FEE2E2,stroke:#B91C1C,color:#7F1D1D
-
-  Start([案件ワークスペースをコピー]):::io
-
-  subgraph P0["Phase 0 — 事前検討の取り込み(任意 / 資料投入時のみ)"]
-    direction TB
-    P0A[input/事前検討資料/ を読み込み]
-    P0B[PR-1 事前検討サマリ生成<br/>問題→原因→対応策→想定要件]
-    P0A --> P0B
-  end
-  class P0,P0A,P0B cc1
-
-  subgraph P1["Phase 1 — 要件定義 + 基本設計(画面以外)"]
-    direction TB
-    P1A[インテーク<br/>output/project_profile.md]
-    P1B[選定<br/>output/_doc_plan.md]
-    P1C[企画 P-* 該当時]
-    P1D[要件定義 R-*]
-    P1DM[DM-1 ドメインモデル<br/>DDD採用時]
-    P1E[基本設計 B-*<br/>B-7, B-8 を除く]
-    P1A --> P1B --> P1C --> P1D --> P1DM --> P1E
-  end
-  class P1,P1A,P1B,P1C,P1D,P1DM,P1E cc1
-
-  H1[(output/_handoff_to_claude_design/<br/>引き渡しパッケージ)]:::io
-
-  subgraph P2["Phase 2 — 画面設計"]
-    direction TB
-    P2A[B-7 画面一覧・遷移図]
-    P2B[B-8 画面設計書]
-    P2C[画面モック/プロトタイプ]
-    P2A --> P2B --> P2C
-  end
-  class P2,P2A,P2B,P2C cd
-
-  H2[(output/04_画面設計_from_ClaudeDesign/<br/>ClaudeDesign 成果物)]:::io
-
-  subgraph P3["Phase 3 — 詳細設計 + 画面影響B-*の確定"]
-    direction TB
-    P3A[取り込みチェック]
-    P3B[画面影響B-* 更新<br/>B-6, B-11, B-14, B-19]
-    P3C[詳細設計 D-*]
-    P3A --> P3B --> P3C
-  end
-  class P3,P3A,P3B,P3C cc1
-
-  subgraph P35["Phase 3.5 — テスト具体化 + レビューゲート(TDD採用時)"]
-    direction TB
-    P35A[3.5-① テスト仕様確定<br/>D-15 最終化 + TS-1 受け入れ]
-    P35G1{{★ゲート1<br/>仕様レビュー}}
-    P35B[3.5-② Red テストコード生成<br/>UT-* / AT-*]
-    P35G2{{★ゲート2<br/>Red コードレビュー}}
-    P35A --> P35G1 --> P35B --> P35G2
-  end
-  class P35,P35A,P35B cc1
-  class P35G1,P35G2 gate
-
-  H25[(output/_handoff_to_implementation/<br/>Red テスト + 設計引き渡し)]:::io
-
-  subgraph P4["Phase 4 — 実装"]
-    direction TB
-    P4A[テストを Green 化する形で実装]
-  end
-  class P4,P4A cc2
-
-  Start -->|事前検討資料あり| P0
-  P0 --> P1
-  Start -->|資料なし| P1
-  P1 --> H1 --> P2 --> H2 --> P3
-  P3 -->|TDD採用| P35 --> H25 --> P4
-  P3 -->|TDD不採用| P4
-```
+![全体フロー](diagrams/workflow_overview.drawio.svg)
 
 凡例: 青=ClaudeCode (ハーネス) / 桃=ClaudeDesign / 緑=ClaudeCode (実装) / 黄=引き渡し成果物 / 赤=レビューゲート
 
@@ -138,101 +63,13 @@ output/
 
 > テスト系(D-15 単体テスト / TS-1 受け入れテスト)が何を典拠に作られるかの依存は、§7.5「Phase 3.5」のテスト依存図を参照(TDD採用時)。
 
-```mermaid
-flowchart LR
-  classDef independent fill:#DCFCE7,stroke:#15803D,color:#14532D
-  classDef screen      fill:#FCE7F3,stroke:#BE185D,color:#831843
-  classDef dependent   fill:#FEE2E2,stroke:#B91C1C,color:#7F1D1D
-
-  subgraph A["A. 画面非依存(Phase 1で確定)"]
-    direction TB
-    R[R-* 全要件]
-    B1[B-1 システム方式]
-    B2[B-2 アーキテクチャ]
-    B12[B-12 論理ER]
-    DM[DM-1 ドメインモデル<br/>DDD採用時]
-    B17[B-17 運用設計]
-    B19p[B-19 セキュリティ<br/>方針レベル]
-  end
-  class R,B1,B2,B12,DM,B17,B19p independent
-
-  subgraph S["B-7, B-8 画面設計(Phase 2)"]
-    Screen[画面一覧・遷移・各画面]
-  end
-  class Screen,S screen
-
-  subgraph C["C. 画面依存(Phase 3で確定)"]
-    direction TB
-    B6[B-6 機能一覧]
-    B11[B-11 外部IF]
-    B14[B-14 CRUD図]
-    B19c[B-19 セキュリティ<br/>画面別制御]
-    D2[D-2 クラス図]
-    D4[D-4 シーケンス図]
-    D13[D-13 API仕様書]
-    D14[D-14 エラーメッセージ]
-    D15[D-15 単体テスト仕様書]
-  end
-  class B6,B11,B14,B19c,D2,D4,D13,D14,D15 dependent
-
-  R --> Screen
-  B1 --> Screen
-  B12 --> Screen
-  Screen --> B6
-  Screen --> B11
-  Screen --> B14
-  Screen --> B19c
-  Screen --> D2
-  Screen --> D4
-  Screen --> D13
-  Screen --> D14
-  Screen --> D15
-```
+![ドキュメント間依存(画面設計の影響)](diagrams/workflow_doc_dependencies.drawio.svg)
 
 ---
 
 ## 5. フェーズ移行のシーケンス
 
-```mermaid
-sequenceDiagram
-  actor User as ユーザー
-  participant CC1 as ClaudeCode<br/>(ハーネス)
-  participant CD as ClaudeDesign
-  participant CC2 as ClaudeCode<br/>(実装)
-
-  User->>CC1: インテーク開始
-  CC1->>User: 質問票で対話
-  CC1->>CC1: project_profile.md / _doc_plan.md 作成
-
-  Note over CC1: Phase 1: R-* + B-*(画面以外)
-  CC1->>User: Phase 1 完了レビュー依頼
-  User->>CC1: 承認
-  CC1->>CC1: _handoff_to_claude_design/ 生成
-  CC1-->>User: 引き渡しパッケージ準備完了
-
-  User->>CD: パッケージを入力に画面設計を依頼
-  CD-->>User: B-7, B-8, モック作成
-  User->>CC1: 04_画面設計_from_ClaudeDesign/ に配置
-
-  CC1->>CC1: 取り込み整合性チェック
-  Note over CC1: Phase 3: D-* + 画面影響B-*更新
-  CC1->>User: Phase 3 完了レビュー依頼
-  User->>CC1: 承認
-
-  opt テスト戦略 = TDD のとき(Phase 3.5)
-    Note over CC1: Phase 3.5: テスト具体化
-    CC1->>CC1: D-15 最終化 + TS-1 作成(UT-*/AT-*)
-    CC1->>User: ★ゲート1 テスト仕様レビュー依頼
-    User->>CC1: 承認
-    CC1->>CC1: Red テストコード生成(失敗状態を確認)
-    CC1->>User: ★ゲート2 Red コードレビュー依頼
-    User->>CC1: 承認
-    CC1->>CC1: _handoff_to_implementation/ 生成
-  end
-
-  User->>CC2: 全ドキュメント + Red テストを入力に実装依頼
-  CC2-->>User: アプリケーションコード(テストを Green 化)
-```
+![フェーズ移行のシーケンス](diagrams/workflow_phase_sequence.drawio.svg)
 
 ---
 
@@ -305,26 +142,7 @@ ClaudeDesign 成果物を受け入れる `output/04_画面設計_from_ClaudeDesi
 
 ### テスト依存(何を典拠にテストを作るか)
 
-```mermaid
-flowchart LR
-  classDef req  fill:#FEF9C3,stroke:#A16207,color:#713F12
-  classDef des  fill:#E0F2FE,stroke:#0369A1,color:#0C4A6E
-  classDef tst  fill:#FCE7F3,stroke:#BE185D,color:#831843
-
-  AC[受け入れ基準 AC<br/>R-7 / R-8]:::req
-  B8[B-8 画面設計書]:::des
-  D12[D-12 モジュール仕様]:::des
-  TS1[TS-1 受け入れテスト仕様<br/>AT-*]:::tst
-  D15[D-15 単体テスト仕様<br/>UT-*]:::tst
-  Code[Red テストコード]:::tst
-
-  AC --> TS1
-  B8 --> TS1
-  B8 --> D15
-  D12 --> D15
-  TS1 --> Code
-  D15 --> Code
-```
+![テスト依存(何を典拠にテストを作るか)](diagrams/workflow_test_dependencies.drawio.svg)
 
 ### ゲート完了基準
 
