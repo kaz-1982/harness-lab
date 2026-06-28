@@ -12,6 +12,8 @@
 
 ![全体フロー](diagrams/workflow_overview.drawio.svg)
 
+> **流れ(テキスト版)**: 案件ワークスペースをコピー →(事前検討資料があれば **Phase 0**)→ **Phase 1**(インテーク → 選定 → 企画 → 要件定義 R-* → DM-1 → 基本設計 B-*)→ `_handoff_to_claude_design/` → **Phase 2**(ClaudeDesign: B-7 → B-8 → モック)→ `04_画面設計_from_ClaudeDesign/` → **Phase 3**(取り込みチェック → 画面影響B-* 更新 → 詳細設計 D-*)→ **TDD採用なら Phase 3.5**(テスト仕様確定 → ★ゲート1 → Red テストコード → ★ゲート2)→ `_handoff_to_implementation/` → **Phase 4**(実装)。**TDD不採用なら Phase 3 から直接 Phase 4**。
+
 凡例: 青=ClaudeCode (ハーネス) / 桃=ClaudeDesign / 緑=ClaudeCode (実装) / 黄=引き渡し成果物 / 赤=レビューゲート
 
 ---
@@ -65,11 +67,15 @@ output/
 
 ![ドキュメント間依存(画面設計の影響)](diagrams/workflow_doc_dependencies.drawio.svg)
 
+> **依存(テキスト版)**: **A. 画面非依存(Phase 1で確定)** = R-* 全要件 / B-1 システム方式 / B-2 アーキテクチャ / B-12 論理ER / DM-1 ドメインモデル / B-17 運用設計 / B-19 セキュリティ(方針)。このうち R-* ・ B-1 ・ B-12 が **画面設計(B-7, B-8 / Phase 2)** の入力になる。画面設計が決まって初めて確定するのが **C. 画面依存(Phase 3で確定)** = B-6 機能一覧 / B-11 外部IF / B-14 CRUD図 / B-19 セキュリティ(画面別制御)/ D-2 クラス図 / D-4 シーケンス図 / D-13 API仕様書 / D-14 エラーメッセージ / D-15 単体テスト仕様。
+
 ---
 
 ## 5. フェーズ移行のシーケンス
 
 ![フェーズ移行のシーケンス](diagrams/workflow_phase_sequence.drawio.svg)
+
+> **やりとり(テキスト版)**: ユーザー↔ClaudeCode(ハーネス)でインテーク → `project_profile.md` / `_doc_plan.md` 作成 → Phase 1 完了レビューで承認 → `_handoff_to_claude_design/` 生成。ユーザーが ClaudeDesign に依頼し B-7 / B-8 / モックを受領 → `04_画面設計_from_ClaudeDesign/` に配置。ハーネスが取り込みチェック → Phase 3(D-* + 画面影響B-*)→ 承認。**TDD のときだけ(opt)** Phase 3.5: D-15 最終化 + TS-1 作成 → ★ゲート1承認 → Red テストコード → ★ゲート2承認 → `_handoff_to_implementation/` 生成。最後にユーザーが ClaudeCode(実装)へ全ドキュメント + Red テストを渡し、テストを Green 化する実装を受け取る。
 
 ---
 
@@ -143,6 +149,8 @@ ClaudeDesign 成果物を受け入れる `output/04_画面設計_from_ClaudeDesi
 ### テスト依存(何を典拠にテストを作るか)
 
 ![テスト依存(何を典拠にテストを作るか)](diagrams/workflow_test_dependencies.drawio.svg)
+
+> **典拠(テキスト版)**: 受け入れ基準 AC(R-7 / R-8)+ B-8 画面設計書 → **TS-1 受け入れテスト仕様(AT-*)**。B-8 + D-12 モジュール仕様 → **D-15 単体テスト仕様(UT-*)**。TS-1 と D-15 の両方 → **Red テストコード**。
 
 ### ゲート完了基準
 
